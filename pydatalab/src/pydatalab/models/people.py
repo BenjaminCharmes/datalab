@@ -137,7 +137,7 @@ class Person(Entry):
     contact_email: Optional[EmailStr]
     """In the case of multiple *verified* email identities, this email will be used as the primary contact."""
 
-    groups: Optional[List[Group]]
+    groups: List[Group] = Field(default_factory=list)
     """A list of groups that this person belongs to."""
 
     managers: Optional[List[PyObjectId]]
