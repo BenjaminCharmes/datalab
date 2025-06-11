@@ -21,6 +21,7 @@
           aria-expanded="false"
           @click="isMenuDropdownVisible = !isMenuDropdownVisible"
         >
+          <font-awesome-icon icon="cubes" fixed-width />
           Add a block
         </a>
         <div
@@ -69,7 +70,7 @@
     </div>
 
     <!-- Display the blocks -->
-    <div v-if="blocksLoaded" class="container block-container">
+    <div v-if="blocksLoaded && blockInfoLoaded" class="container block-container">
       <transition-group name="block-list" tag="div">
         <div v-for="block_id in item_data.display_order" :key="block_id" class="block-list-item">
           <component :is="getBlockDisplayType(block_id)" :item_id="item_id" :block_id="block_id" />
@@ -112,9 +113,8 @@ import setupUppy from "@/file_upload.js";
 
 import tinymce from "tinymce/tinymce";
 
-import { blockTypes, itemTypes } from "@/resources.js";
-import NotImplementedBlock from "@/components/datablocks/NotImplementedBlock.vue";
-import { API_URL } from "@/resources.js";
+import { itemTypes, API_URL, customBlockTypes } from "@/resources.js";
+import BokehBlock from "@/components/datablocks/BokehBlock.vue";
 import { formatDistanceToNow } from "date-fns";
 
 import StyledBlockHelp from "@/components/StyledBlockHelp";
@@ -135,6 +135,7 @@ export default {
       next();
     } else {
       if (window.confirm("Unsaved changes present. Would you like to leave without saving?")) {
+        this.$store.commit("setItemSaved", { item_id: this.item_id, isSaved: true });
         next();
       } else {
         next(false);
@@ -189,7 +190,13 @@ export default {
       return Object.fromEntries(this.files.map((file) => [file.immutable_id, file]));
     },
     blocksInfos() {
-      return this.$store.state.blocksInfos;
+      if (this.blockInfoLoaded) {
+        const blocksInfos = Array.from(this.$store.getters.getBlocksInfos.values());
+        return [...blocksInfos].sort((a, b) =>
+          a?.attributes?.name.localeCompare(b?.attributes?.name),
+        );
+      }
+      return [];
     },
     itemApiUrl() {
       return API_URL + "/items/" + this.refcode;
@@ -211,7 +218,7 @@ export default {
     this.interval = setInterval(() => this.setLastModified(), 30000);
   },
   beforeMount() {
-    this.blockTypes = blockTypes; // bind blockTypes as a NON-REACTIVE object to the this context so that it is accessible by the template.
+    this.customBlockTypes = customBlockTypes; // bind customBlockTypes as a NON-REACTIVE object to the this context so that it is accessible by the template.
   },
   mounted() {
     // overwrite ctrl-s and cmd-s to save the page
@@ -256,15 +263,14 @@ export default {
     },
     getBlockDisplayType(block_id) {
       var type = this.blocks[block_id].blocktype;
-      if (type in blockTypes) {
-        return blockTypes[type].component;
+      if (type in customBlockTypes) {
+        return customBlockTypes[type].component;
       } else {
-        return NotImplementedBlock;
+        return BokehBlock;
       }
     },
     saveSample() {
       // trigger the mce save so that they update the store with their content
-      console.log("save sample clicked!");
       tinymce.editors.forEach((editor) => {
         editor.isDirty() && editor.save();
       });
@@ -275,6 +281,9 @@ export default {
       if (this.item_id == null) {
         getItemByRefcode(this.refcode).then(() => {
           this.itemDataLoaded = true;
+          this.$nextTick(() => {
+            this.$store.commit("setItemSaved", { item_id: this.item_id, isSaved: true });
+          });
           this.item_id = this.$store.state.refcode_to_id[this.refcode];
           this.updateBlocks();
         });
@@ -282,6 +291,9 @@ export default {
         getItemData(this.item_id).then(() => {
           this.itemDataLoaded = true;
           this.refcode = this.item_data.refcode;
+          this.$nextTick(() => {
+            this.$store.commit("setItemSaved", { item_id: this.item_id, isSaved: true });
+          });
           this.updateBlocks();
         });
       }

@@ -27,7 +27,6 @@ describe("Edit Page", () => {
     cy.findByText("About").should("exist");
     cy.findByText("Samples").should("exist");
     cy.findByText("Add an item").should("exist");
-    cy.findByText("# of blocks").should("exist");
 
     cy.contains("Server Error. Sample list could not be retreived.").should("not.exist");
     expect(consoleSpy).not.to.be.called;
@@ -35,7 +34,8 @@ describe("Edit Page", () => {
 
   it("Adds a valid sample", () => {
     cy.createSample("editable_sample", "This is a sample name", "1990-01-07T00:00");
-    cy.get("tr>td").eq(8).contains(0); // 0 blocks are present
+    cy.get("tr>td").eq(8).should("be.empty"); // 0 blocks are present
+    cy.get("tr>td").eq(9).should("be.empty"); // 0 files are present
   });
 
   it("Add some more samples, to use as components", () => {
@@ -73,6 +73,7 @@ describe("Edit Page", () => {
   it("adds some synthesis information", () => {
     cy.get('[data-testid="search-input"]').type("editable_sample");
     cy.findByText("editable_sample").click();
+    cy.expandIfCollapsed("[data-testid=synthesis-block]");
     cy.get("#synthesis-information .vs__search").first().type("component1");
     cy.get(".vs__dropdown-menu").contains(".badge", "component1").click();
     cy.get("#synthesis-information tbody > tr").should("have.length", 2);
@@ -292,5 +293,21 @@ describe("Edit Page", () => {
 
     // Check that the img with id "media-block-img" is present
     cy.get('img[data-testid="media-block-img"]').should("exist");
+  });
+
+  it("Uploads an Raman data file, makes a Raman block and checks that the plot is shown", () => {
+    cy.uploadFileViaAPI("editable_sample", "example_data/raman/labspec_raman_example.txt");
+
+    cy.get('[data-testid="search-input"]').type("editable_sample");
+    cy.findByText("editable_sample").click();
+
+    cy.findByText("Add a block").click();
+    cy.get('[data-testid="add-block-dropdown"]').findByText("Raman spectroscopy").click();
+    cy.findAllByText("Select a file:").eq(2).should("exist");
+    cy.get("select.file-select-dropdown")
+      .eq(2)
+      .select("example_data_raman_labspec_raman_example.txt");
+    cy.contains("label", "X axis").should("exist");
+    cy.contains("label", "Y axis").should("exist");
   });
 });
