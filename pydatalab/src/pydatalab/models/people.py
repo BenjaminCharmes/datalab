@@ -114,10 +114,10 @@ class Group(Entry):
     display_name: DisplayName
     """The chosen display name for the group"""
 
-    description: Optional[str]
+    description: str | None
     """A description of the group"""
 
-    group_admins: Optional[List[PyObjectId]]
+    group_admins: list[PyObjectId] | None
     """A list of user IDs that can manage this group."""
 
 
@@ -136,7 +136,7 @@ class Person(Entry):
     contact_email: EmailStr | None
     """In the case of multiple *verified* email identities, this email will be used as the primary contact."""
 
-    groups: List[Group] = Field(default_factory=list)
+    groups: list[Group] = Field(default_factory=list)
     """A list of groups that this person belongs to."""
 
     managers: list[PyObjectId] | None

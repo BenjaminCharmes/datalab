@@ -68,7 +68,7 @@ class LoginUser(UserMixin):
         return self.person.identities
 
     @property
-    def groups(self) -> List[group]:
+    def groups(self) -> list[Group]:
         """Returns the list of groups that the user is a member of."""
         return self.person.groups
 
