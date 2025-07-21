@@ -112,18 +112,26 @@ class PyObjectId(ObjectId):
         return core_schema.no_info_after_validator_function(
             cls.validate,
             core_schema.str_schema(),
-            serialization=core_schema.plain_serializer_function_ser_schema(str, when_used="json"),
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                lambda x: str(x) if x else None, when_used="json"
+            ),
         )
 
     @classmethod
     def validate(cls, v):
+        if v is None:
+            return None
+        if isinstance(v, cls):
+            return v
+        if isinstance(v, ObjectId):
+            return cls(ObjectId(v))
         if isinstance(v, dict) and "$oid" in v:
             v = v["$oid"]
-
-        if not ObjectId.is_valid(v):
-            raise ValueError("Invalid ObjectId")
-
-        return ObjectId(v)
+        if isinstance(v, str):
+            if not ObjectId.is_valid(v):
+                raise ValueError("Invalid ObjectId")
+            return cls(ObjectId(v))
+        raise ValueError("Invalid ObjectId")
 
 
 class IsoformatDateTime(datetime.datetime):

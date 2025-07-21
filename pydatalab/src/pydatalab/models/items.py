@@ -41,7 +41,7 @@ class Item(Entry, HasOwner, HasRevisionControl, IsCollectable, HasBlocks, abc.AB
     files: list[File] | None = None
     """Any files attached to this sample."""
 
-    file_ObjectIds: list[PyObjectId] = Field([])
+    file_ObjectIds: list[PyObjectId] = Field(default_factory=list)
     """Links to object IDs of files stored within the database."""
 
     @field_validator("refcode", mode="before")

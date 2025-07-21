@@ -14,12 +14,10 @@
       "properties": {
         "blocks_obj": {
           "additionalProperties": true,
-          "default": {},
           "title": "Blocks Obj",
           "type": "object"
         },
         "display_order": {
-          "default": [],
           "items": {
             "type": "string"
           },
@@ -27,7 +25,6 @@
           "type": "array"
         },
         "creator_ids": {
-          "default": [],
           "items": {
             "type": "string"
           },
@@ -268,7 +265,6 @@
           "title": "Revisions"
         },
         "creator_ids": {
-          "default": [],
           "items": {
             "type": "string"
           },
@@ -772,7 +768,6 @@
   "description": "A model for representing an experimental sample, based on the connection\nwith cheminventory.net, which mixes container-level and substance-level\ninformation.",
   "properties": {
     "synthesis_constituents": {
-      "default": [],
       "items": {
         "$ref": "#/$defs/Constituent"
       },
@@ -793,12 +788,10 @@
     },
     "blocks_obj": {
       "additionalProperties": true,
-      "default": {},
       "title": "Blocks Obj",
       "type": "object"
     },
     "display_order": {
-      "default": [],
       "items": {
         "type": "string"
       },
@@ -806,7 +799,6 @@
       "type": "array"
     },
     "collections": {
-      "default": [],
       "items": {
         "$ref": "#/$defs/Collection"
       },
@@ -832,7 +824,6 @@
       "title": "Revisions"
     },
     "creator_ids": {
-      "default": [],
       "items": {
         "type": "string"
       },
@@ -958,7 +949,6 @@
       "title": "Files"
     },
     "file_ObjectIds": {
-      "default": [],
       "items": {
         "type": "string"
       },

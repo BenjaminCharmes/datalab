@@ -540,6 +540,13 @@ def _create_sample(
             }
         ]
 
+    if "file_ObjectIds" in new_sample and isinstance(new_sample["file_ObjectIds"], list):
+        from pydatalab.models.utils import PyObjectId
+
+        new_sample["file_ObjectIds"] = [
+            PyObjectId(id_) if isinstance(id_, str) else id_ for id_ in new_sample["file_ObjectIds"]
+        ]
+
     # Generate a unique refcode for the sample
     new_sample["refcode"] = generate_unique_refcode()
     if generate_id_automatically:
@@ -578,7 +585,9 @@ def _create_sample(
     # the `Entry` model.
     try:
         result = flask_mongo.db.items.insert_one(
-            data_model.model_dump(exclude={"creators", "collections"})
+            data_model.model_dump(
+                exclude={"creators", "collections"}, exclude_none=True, by_alias=True
+            )
         )
     except DuplicateKeyError as error:
         LOGGER.debug("item_id %s already exists in database", sample_dict["item_id"], sample_dict)
@@ -974,9 +983,11 @@ def get_item_data(
         item_id = return_dict["item_id"]
 
     # create the files_data dictionary keyed by file ObjectId
-    files_data: dict[ObjectId, dict] = {
-        f["immutable_id"]: f for f in return_dict.get("files") or []
-    }
+    files_data: dict[str, dict] = {}
+    for f in return_dict.get("files") or []:
+        file_id_str = str(f.get("immutable_id", ""))
+        if file_id_str:
+            files_data[file_id_str] = {**f, "immutable_id": file_id_str, "_id": file_id_str}
 
     return jsonify(
         {
@@ -1075,7 +1086,14 @@ def save_item():
     item.update(updated_data)
 
     try:
-        item = ITEM_MODELS[item_type](**item).model_dump()
+        model_instance = ITEM_MODELS[item_type](**item)
+        item = model_instance.model_dump(
+            exclude_none=True,
+            exclude_unset=True,
+            by_alias=True,
+            exclude={"collections", "creators"},
+        )
+
     except ValidationError as exc:
         return (
             jsonify(

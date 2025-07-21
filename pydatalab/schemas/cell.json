@@ -67,12 +67,10 @@
       "properties": {
         "blocks_obj": {
           "additionalProperties": true,
-          "default": {},
           "title": "Blocks Obj",
           "type": "object"
         },
         "display_order": {
-          "default": [],
           "items": {
             "type": "string"
           },
@@ -80,7 +78,6 @@
           "type": "array"
         },
         "creator_ids": {
-          "default": [],
           "items": {
             "type": "string"
           },
@@ -282,7 +279,6 @@
           "title": "Revisions"
         },
         "creator_ids": {
-          "default": [],
           "items": {
             "type": "string"
           },
@@ -787,12 +783,10 @@
   "properties": {
     "blocks_obj": {
       "additionalProperties": true,
-      "default": {},
       "title": "Blocks Obj",
       "type": "object"
     },
     "display_order": {
-      "default": [],
       "items": {
         "type": "string"
       },
@@ -800,7 +794,6 @@
       "type": "array"
     },
     "collections": {
-      "default": [],
       "items": {
         "$ref": "#/$defs/Collection"
       },
@@ -826,7 +819,6 @@
       "title": "Revisions"
     },
     "creator_ids": {
-      "default": [],
       "items": {
         "type": "string"
       },
@@ -952,7 +944,6 @@
       "title": "Files"
     },
     "file_ObjectIds": {
-      "default": [],
       "items": {
         "type": "string"
       },
