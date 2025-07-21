@@ -23,7 +23,7 @@ from pydatalab.models.utils import RandomAlphabeticalRefcodeFactory, RefCodeFact
 __all__ = ("CONFIG", "ServerConfig", "DeploymentMetadata", "RemoteFilesystem")
 
 
-def config_file_settings(settings: BaseSettings) -> dict[str, Any]:
+def config_file_settings(settings_cls: type[BaseSettings] | None = None) -> dict[str, Any]:
     """Returns a dictionary of server settings loaded from the default or specified
     JSON config file location (via the env var `PYDATALAB_CONFIG_FILE`).
 
@@ -33,9 +33,7 @@ def config_file_settings(settings: BaseSettings) -> dict[str, Any]:
     res = {}
     if config_file.is_file():
         logging.debug("Loading from config file at %s", config_file)
-        config_file_content = config_file.read_text(
-            encoding=settings.model_config.get("env_file_encoding", "utf-8")
-        )
+        config_file_content = config_file.read_text(encoding="utf-8")
 
         try:
             res = json.loads(config_file_content)
@@ -274,9 +272,12 @@ its importance when deploying a datalab instance.""",
     @model_validator(mode="before")
     @classmethod
     def validate_cache_ages(cls, values):
-        if values.get("REMOTE_CACHE_MIN_AGE") > values.get("REMOTE_CACHE_MAX_AGE"):
+        min_age = values.get("REMOTE_CACHE_MIN_AGE")
+        max_age = values.get("REMOTE_CACHE_MAX_AGE")
+
+        if min_age is not None and max_age is not None and min_age > max_age:
             raise RuntimeError(
-                f"The maximum cache age must be greater than the minimum cache age: min {values.get('REMOTE_CACHE_MIN_AGE')=}, max {values.get('REMOTE_CACHE_MAX_AGE')=}"
+                f"The maximum cache age must be greater than the minimum cache age: min {min_age=}, max {max_age=}"
             )
         return values
 

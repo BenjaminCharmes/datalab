@@ -11,8 +11,6 @@ from pydatalab.models.utils import Constituent, InlineSubstance, PyObjectId
 
 if TYPE_CHECKING:
     from pydatalab.models.collections import Collection
-else:
-    Collection = "Collection"
 
 
 class HasOwner(BaseModel):
