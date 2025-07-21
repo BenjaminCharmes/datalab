@@ -288,6 +288,12 @@ def find_user_with_identity(
         {"identities.identifier": identifier, "identities.identity_type": identity_type},
     )
     if user:
+        if "_id" in user:
+            user["immutable_id"] = str(user.pop("_id"))
+
+        if "managers" not in user:
+            user["managers"] = None
+
         person = Person(**user)
         identity_indices: list[int] = [
             ind
@@ -301,7 +307,7 @@ def find_user_with_identity(
 
         if verify and not person.identities[identity_index].verified:
             flask_mongo.db.users.update_one(
-                {"_id": person.immutable_id},
+                {"_id": ObjectId(person.immutable_id)},
                 {"$set": {f"identities.{identity_index}.verified": True}},
             )
 
