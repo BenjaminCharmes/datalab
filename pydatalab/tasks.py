@@ -32,28 +32,12 @@ def update_file(filename: str, sub_line: tuple[str, str], strip: str | None = No
 @task
 def generate_schemas(_):
     """This task generates JSONSchemas for all item models used in the project."""
-
     from pydatalab.models import ITEM_MODELS
 
     schemas_path = pathlib.Path(__file__).parent / "schemas"
 
     for model in ITEM_MODELS.values():
-        # Workaround pour le problème de métaclasse
-        if hasattr(model, "model_json_schema"):
-            schema = model.model_json_schema(by_alias=False)
-        elif hasattr(model, "__pydantic_model__"):
-            # Fallback pour les cas étranges
-            schema = model.__pydantic_model__.model_json_schema(by_alias=False)
-        else:
-            # Dernière solution : créer une instance temporaire
-            try:
-                temp_instance = model()
-                schema = temp_instance.model_json_schema(by_alias=False)
-            except Exception:
-                # Si tout échoue, on skip ce modèle
-                print(f"Skipping model {model.__name__} - cannot generate schema")
-                continue
-
+        schema = model.model_json_schema(by_alias=False)
         with open(schemas_path / f"{model.__name__.lower()}.json", "w") as f:
             json.dump(schema, f, indent=2)
 
