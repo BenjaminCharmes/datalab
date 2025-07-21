@@ -111,10 +111,10 @@ class Person(Entry):
     display_name: DisplayName | None
     """The user-chosen display name."""
 
-    contact_email: EmailStr | None
+    contact_email: EmailStr | None = None
     """In the case of multiple *verified* email identities, this email will be used as the primary contact."""
 
-    managers: list[PyObjectId] | None
+    managers: list[PyObjectId] | None = None
     """A list of user IDs that can manage this person's items."""
 
     account_status: AccountStatus = Field(AccountStatus.UNVERIFIED)

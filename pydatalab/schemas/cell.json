@@ -664,6 +664,7 @@
               "type": "null"
             }
           ],
+          "default": null,
           "title": "Contact Email"
         },
         "managers": {
@@ -678,6 +679,7 @@
               "type": "null"
             }
           ],
+          "default": null,
           "title": "Managers"
         },
         "account_status": {
@@ -686,9 +688,7 @@
         }
       },
       "required": [
-        "display_name",
-        "contact_email",
-        "managers"
+        "display_name"
       ],
       "title": "Person",
       "type": "object"
@@ -911,6 +911,7 @@
           "type": "null"
         }
       ],
+      "default": null,
       "title": "Description"
     },
     "date": {
@@ -947,6 +948,7 @@
           "type": "null"
         }
       ],
+      "default": null,
       "title": "Files"
     },
     "file_ObjectIds": {
@@ -1054,10 +1056,8 @@
   },
   "required": [
     "item_id",
-    "description",
     "date",
     "name",
-    "files",
     "cell_format",
     "cell_format_description",
     "cell_preparation_description",

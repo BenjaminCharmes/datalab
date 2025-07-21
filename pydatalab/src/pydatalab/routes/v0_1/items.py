@@ -525,14 +525,14 @@ def _create_sample(
     elif CONFIG.TESTING:
         # Set fake ID to ObjectId("000000000000000000000000") so a dummy user can be created
         # locally for testing creator UI elements
-        new_sample["creator_ids"] = [PUBLIC_USER_ID]
+        new_sample["creator_ids"] = [str(PUBLIC_USER_ID)]
         new_sample["creators"] = [
             {
                 "display_name": "Public testing user",
             }
         ]
     else:
-        new_sample["creator_ids"] = [current_user.person.immutable_id]
+        new_sample["creator_ids"] = [str(current_user.person.immutable_id)]
         new_sample["creators"] = [
             {
                 "display_name": current_user.person.display_name,

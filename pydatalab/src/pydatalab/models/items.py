@@ -29,7 +29,7 @@ class Item(Entry, HasOwner, HasRevisionControl, IsCollectable, HasBlocks, abc.AB
     item_id: HumanReadableIdentifier
     """A locally unique, human-readable identifier for the entry. This ID is mutable."""
 
-    description: str | None
+    description: str | None = None
     """A description of the item, either in plain-text or a markup language."""
 
     date: IsoformatDateTime | None
@@ -38,7 +38,7 @@ class Item(Entry, HasOwner, HasRevisionControl, IsCollectable, HasBlocks, abc.AB
     name: str | None
     """An optional human-readable/usable name for the entry."""
 
-    files: list[File] | None
+    files: list[File] | None = None
     """Any files attached to this sample."""
 
     file_ObjectIds: list[PyObjectId] = Field([])
