@@ -143,6 +143,8 @@ def test_custom_and_inherited_items():
     class TestItem(Item):
         type: str = "items_custom"
 
+    TestItem.model_rebuild()
+
     item = TestItem(
         type="items_custom",
         last_modified=None,

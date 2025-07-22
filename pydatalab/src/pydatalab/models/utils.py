@@ -79,6 +79,8 @@ class Refcode(str):
         refcode_pattern = r"^[a-z]{2,10}:" + IDENTIFIER_REGEX[1:]
 
         def validate_refcode(v):
+            if v is None:
+                return None
             if not isinstance(v, str):
                 v = str(v)
             v = v.strip()
@@ -90,7 +92,9 @@ class Refcode(str):
 
         return core_schema.no_info_after_validator_function(
             validate_refcode,
-            core_schema.union_schema([core_schema.str_schema(), core_schema.int_schema()]),
+            core_schema.union_schema(
+                [core_schema.str_schema(), core_schema.int_schema(), core_schema.none_schema()]
+            ),
         )
 
 
@@ -148,6 +152,7 @@ class PyObjectId(ObjectId):
                     core_schema.str_schema(),
                     core_schema.is_instance_schema(ObjectId),
                     core_schema.is_instance_schema(cls),
+                    core_schema.none_schema(),
                 ]
             ),
             serialization=core_schema.plain_serializer_function_ser_schema(
@@ -326,4 +331,18 @@ class Constituent(BaseModel):
                 if not name:
                     raise ValueError("Inline substance must have a name!")
                 return InlineSubstance(name=name, chemform=chemform)
+        elif hasattr(v, "model_dump"):
+            item_id = getattr(v, "item_id", None)
+            refcode = getattr(v, "refcode", None)
+            item_type = getattr(v, "type", None)
+            name = getattr(v, "name", None)
+            chemform = getattr(v, "chemform", None)
+
+            if item_id or refcode:
+                return EntryReference(
+                    item_id=item_id, refcode=refcode, type=item_type, name=name, chemform=chemform
+                )
+            else:
+                return InlineSubstance(name=name or str(v), chemform=chemform)
+
         return v

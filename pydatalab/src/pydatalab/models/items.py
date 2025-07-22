@@ -21,7 +21,7 @@ from pydatalab.models.utils import (
 class Item(Entry, HasOwner, HasRevisionControl, IsCollectable, HasBlocks, abc.ABC):
     """The generic model for data types that will be exposed with their own named endpoints."""
 
-    refcode: Refcode = None  # type: ignore
+    refcode: Refcode | None = None  # type: ignore
     """A globally unique immutable ID comprised of the deployment prefix (e.g., `grey`)
     and a locally unique string, ideally created with some consistent scheme.
     """

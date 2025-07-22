@@ -26,7 +26,14 @@
         },
         "creator_ids": {
           "items": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "title": "Creator Ids",
           "type": "array"
@@ -53,10 +60,17 @@
           "type": "string"
         },
         "immutable_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
           "default": null,
           "format": "uuid",
-          "title": "Immutable ID",
-          "type": "string"
+          "title": "Immutable ID"
         },
         "last_modified": {
           "anyOf": [
@@ -98,6 +112,7 @@
               "type": "null"
             }
           ],
+          "default": null,
           "title": "Title"
         },
         "description": {
@@ -109,6 +124,7 @@
               "type": "null"
             }
           ],
+          "default": null,
           "title": "Description"
         },
         "num_items": {
@@ -124,10 +140,6 @@
           "title": "Num Items"
         }
       },
-      "required": [
-        "title",
-        "description"
-      ],
       "title": "Collection",
       "type": "object"
     },
@@ -154,7 +166,14 @@
         },
         "creator_ids": {
           "items": {
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "title": "Creator Ids",
           "type": "array"
@@ -181,10 +200,17 @@
           "type": "string"
         },
         "immutable_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
           "default": null,
           "format": "uuid",
-          "title": "Immutable ID",
-          "type": "string"
+          "title": "Immutable ID"
         },
         "last_modified": {
           "anyOf": [
@@ -214,6 +240,7 @@
               "type": "null"
             }
           ],
+          "default": null,
           "title": "Size"
         },
         "last_modified_remote": {
@@ -225,6 +252,7 @@
               "type": "null"
             }
           ],
+          "default": null,
           "title": "Last Modified Remote"
         },
         "item_ids": {
@@ -258,6 +286,7 @@
               "type": "null"
             }
           ],
+          "default": null,
           "title": "Original Name"
         },
         "location": {
@@ -269,6 +298,7 @@
               "type": "null"
             }
           ],
+          "default": null,
           "title": "Location"
         },
         "url_path": {
@@ -280,6 +310,7 @@
               "type": "null"
             }
           ],
+          "default": null,
           "title": "Url Path"
         },
         "source": {
@@ -291,6 +322,7 @@
               "type": "null"
             }
           ],
+          "default": null,
           "title": "Source"
         },
         "time_added": {
@@ -307,6 +339,7 @@
               "type": "null"
             }
           ],
+          "default": null,
           "title": "Metadata"
         },
         "representation": {
@@ -316,6 +349,7 @@
               "type": "null"
             }
           ],
+          "default": null,
           "title": "Representation"
         },
         "source_server_name": {
@@ -327,6 +361,7 @@
               "type": "null"
             }
           ],
+          "default": null,
           "title": "Source Server Name"
         },
         "source_path": {
@@ -338,6 +373,7 @@
               "type": "null"
             }
           ],
+          "default": null,
           "title": "Source Path"
         },
         "is_live": {
@@ -346,21 +382,9 @@
         }
       },
       "required": [
-        "size",
-        "last_modified_remote",
-        "item_ids",
-        "blocks",
         "name",
         "extension",
-        "original_name",
-        "location",
-        "url_path",
-        "source",
         "time_added",
-        "metadata",
-        "representation",
-        "source_server_name",
-        "source_path",
         "is_live"
       ],
       "title": "File",
@@ -439,10 +463,17 @@
           "type": "string"
         },
         "immutable_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
           "default": null,
           "format": "uuid",
-          "title": "Immutable ID",
-          "type": "string"
+          "title": "Immutable ID"
         },
         "last_modified": {
           "anyOf": [
@@ -500,7 +531,14 @@
           "anyOf": [
             {
               "items": {
-                "type": "string"
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               },
               "type": "array"
             },
@@ -653,7 +691,14 @@
     },
     "creator_ids": {
       "items": {
-        "type": "string"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
       },
       "title": "Creator Ids",
       "type": "array"
@@ -680,10 +725,17 @@
       "type": "string"
     },
     "immutable_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
       "default": null,
       "format": "uuid",
-      "title": "Immutable ID",
-      "type": "string"
+      "title": "Immutable ID"
     },
     "last_modified": {
       "anyOf": [
@@ -711,6 +763,9 @@
         },
         {
           "type": "integer"
+        },
+        {
+          "type": "null"
         }
       ],
       "default": null,
@@ -780,7 +835,14 @@
     },
     "file_ObjectIds": {
       "items": {
-        "type": "string"
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
       },
       "title": "File Objectids",
       "type": "array"

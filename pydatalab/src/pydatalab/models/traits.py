@@ -7,7 +7,7 @@ from pydantic import (
 )
 
 from pydatalab.models.people import Person
-from pydatalab.models.utils import Constituent, InlineSubstance, PyObjectId
+from pydatalab.models.utils import Constituent, PyObjectId
 
 if TYPE_CHECKING:
     from pydatalab.models.collections import Collection
@@ -48,42 +48,65 @@ class IsCollectable(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def add_missing_collection_relationships(cls, values):
-        from pydatalab.models.relationships import TypedRelationship
-
         if values.get("collections") is not None:
-            new_ids = {coll.immutable_id for coll in values["collections"]}
+            new_ids = set()
+            for coll in values["collections"]:
+                if isinstance(coll, dict):
+                    immutable_id = coll.get("immutable_id")
+                else:
+                    immutable_id = getattr(coll, "immutable_id", None)
+                if immutable_id:
+                    new_ids.add(immutable_id)
+
             existing_collection_relationship_ids = set()
 
             if values.get("relationships") is not None:
-                existing_collection_relationship_ids = {
-                    relationship.immutable_id
-                    for relationship in values["relationships"]
-                    if relationship.type == "collections"
-                }
+                for relationship in values["relationships"]:
+                    if isinstance(relationship, dict):
+                        rel_type = relationship.get("type")
+                        if rel_type == "collections":
+                            immutable_id = relationship.get("immutable_id")
+                            if immutable_id:
+                                existing_collection_relationship_ids.add(immutable_id)
+                    else:
+                        rel_type = getattr(relationship, "type", None)
+                        if rel_type == "collections":
+                            immutable_id = getattr(relationship, "immutable_id", None)
+                            if immutable_id:
+                                existing_collection_relationship_ids.add(immutable_id)
 
             if "relationships" not in values:
                 values["relationships"] = []
 
             for collection in values.get("collections", []):
-                if collection.immutable_id not in existing_collection_relationship_ids:
-                    relationship = TypedRelationship(
-                        relation=None,
-                        immutable_id=collection.immutable_id,
-                        type="collections",
-                        description="Is a member of",
-                    )
-                    values["relationships"].append(relationship)
+                if isinstance(collection, dict):
+                    immutable_id = collection.get("immutable_id")
+                else:
+                    immutable_id = getattr(collection, "immutable_id", None)
 
-            values["relationships"] = [
-                d
-                for d in values.get("relationships", [])
-                if d.type != "collections" or d.immutable_id in new_ids
-            ]
+                if immutable_id and immutable_id not in existing_collection_relationship_ids:
+                    relationship_dict = {
+                        "relation": None,
+                        "immutable_id": immutable_id,
+                        "type": "collections",
+                        "description": "Is a member of",
+                    }
+                    values["relationships"].append(relationship_dict)
 
-        if len([d for d in values.get("relationships", []) if d.type == "collections"]) != len(
-            values.get("collections", [])
-        ):
-            raise RuntimeError("Relationships and collections mismatch")
+            if "relationships" in values:
+                filtered_relationships = []
+                for d in values.get("relationships", []):
+                    if isinstance(d, dict):
+                        rel_type = d.get("type")
+                        immutable_id = d.get("immutable_id")
+                    else:
+                        rel_type = getattr(d, "type", None)
+                        immutable_id = getattr(d, "immutable_id", None)
+
+                    if rel_type != "collections" or immutable_id in new_ids:
+                        filtered_relationships.append(d)
+
+                values["relationships"] = filtered_relationships
 
         return values
 
@@ -101,72 +124,94 @@ class HasSynthesisInfo(BaseModel):
     @classmethod
     def add_missing_synthesis_relationships(cls, values):
         """Add any missing sample synthesis constituents to parent relationships"""
-        from pydatalab.models.relationships import RelationshipType, TypedRelationship
+        from pydatalab.models.relationships import RelationshipType
 
-        constituents_set = set()
         if values.get("synthesis_constituents") is not None:
             existing_relationships = values.get("relationships", [])
             existing_parent_relationship_ids = set()
 
             if existing_relationships:
-                existing_parent_relationship_ids = {
-                    relationship.refcode or relationship.item_id
-                    for relationship in existing_relationships
-                    if relationship.relation == RelationshipType.PARENT
-                }
+                for relationship in existing_relationships:
+                    if isinstance(relationship, dict):
+                        relation = relationship.get("relation")
+                        if relation == RelationshipType.PARENT or relation == "parent":
+                            ref_id = relationship.get("refcode") or relationship.get("item_id")
+                            if ref_id:
+                                existing_parent_relationship_ids.add(ref_id)
+                    else:
+                        if (
+                            hasattr(relationship, "relation")
+                            and relationship.relation == RelationshipType.PARENT
+                        ):
+                            ref_id = getattr(relationship, "refcode", None) or getattr(
+                                relationship, "item_id", None
+                            )
+                            if ref_id:
+                                existing_parent_relationship_ids.add(ref_id)
 
             if "relationships" not in values:
                 values["relationships"] = []
 
+            constituents_set = set()
             for constituent in values.get("synthesis_constituents", []):
-                item_data = (
-                    constituent.get("item") if isinstance(constituent, dict) else constituent.item
-                )
-
-                # If this is an inline relationship (has name but no item_id/refcode), just skip it
-                if isinstance(item_data, dict):
-                    if not item_data.get("item_id") and not item_data.get("refcode"):
-                        continue
-                    constituent_id = item_data.get("refcode") or item_data.get("item_id")
+                if isinstance(constituent, dict):
+                    item_data = constituent.get("item")
                 else:
-                    if isinstance(item_data, InlineSubstance):
+                    item_data = getattr(constituent, "item", None)
+
+                if item_data is None:
+                    continue
+
+                if isinstance(item_data, dict):
+                    item_id = item_data.get("item_id")
+                    refcode = item_data.get("refcode")
+                    item_type = item_data.get("type")
+
+                    if not item_id and not refcode:
                         continue
-                    constituent_id = item_data.refcode or item_data.item_id
 
-                if constituent_id not in existing_parent_relationship_ids:
-                    if isinstance(item_data, dict):
-                        relationship = TypedRelationship(
-                            relation=RelationshipType.PARENT,
-                            refcode=item_data.get("refcode"),
-                            item_id=item_data.get("item_id"),
-                            type=item_data.get("type"),
-                            description="Is a constituent of",
-                        )
+                    constituent_id = refcode or item_id
+                else:
+                    item_id = getattr(item_data, "item_id", None)
+                    refcode = getattr(item_data, "refcode", None)
+                    item_type = getattr(item_data, "type", None)
+
+                    if not item_id and not refcode:
+                        continue
+
+                    constituent_id = refcode or item_id
+
+                if constituent_id and constituent_id not in existing_parent_relationship_ids:
+                    relationship_dict = {
+                        "relation": RelationshipType.PARENT,
+                        "refcode": refcode,
+                        "item_id": item_id,
+                        "type": item_type,
+                        "description": "Is a constituent of",
+                    }
+                    values["relationships"].append(relationship_dict)
+                    constituents_set.add(constituent_id)
+
+            if "relationships" in values:
+                filtered_relationships = []
+                for rel in values["relationships"]:
+                    if isinstance(rel, dict):
+                        rel_id = rel.get("refcode") or rel.get("item_id")
+                        relation = rel.get("relation")
+                        rel_type = rel.get("type")
                     else:
-                        relationship = TypedRelationship(
-                            relation=RelationshipType.PARENT,
-                            refcode=item_data.refcode,
-                            item_id=item_data.item_id,
-                            type=item_data.type,
-                            description="Is a constituent of",
-                        )
-                    values["relationships"].append(relationship)
+                        rel_id = getattr(rel, "refcode", None) or getattr(rel, "item_id", None)
+                        relation = getattr(rel, "relation", None)
+                        rel_type = getattr(rel, "type", None)
 
-                # Accumulate all constituent IDs in a set to filter those that have been deleted
-                constituents_set.add(constituent_id)
+                    if not (
+                        rel_id not in constituents_set
+                        and relation == RelationshipType.PARENT
+                        and rel_type in ("samples", "starting_materials")
+                    ):
+                        filtered_relationships.append(rel)
 
-        # Finally, filter out any parent relationships with item that were removed
-        # from the synthesis constituents
-        if "relationships" in values:
-            values["relationships"] = [
-                rel
-                for rel in values["relationships"]
-                if not (
-                    (rel.refcode or rel.item_id) not in constituents_set
-                    and rel.relation == RelationshipType.PARENT
-                    and rel.type in ("samples", "starting_materials")
-                )
-            ]
+                values["relationships"] = filtered_relationships
 
         return values
 
