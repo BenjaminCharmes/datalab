@@ -30,7 +30,7 @@ def test_sample_with_inlined_reference():
     )
 
     assert b
-    assert len(b.relationships) == 1
+    assert len(b.relationships or []) == 1
 
     c = Sample(
         item_id="c-123",
@@ -41,7 +41,7 @@ def test_sample_with_inlined_reference():
     )
 
     assert c
-    assert len(c.relationships) == 1
+    assert len(c.relationships or []) == 1
 
     d = Sample(
         item_id="d-123",
@@ -51,7 +51,7 @@ def test_sample_with_inlined_reference():
         ],
     )
     assert d
-    assert len(d.relationships) == 0
+    assert len(d.relationships or []) == 0
 
 
 @pytest.mark.parametrize("model", ITEM_MODELS.values())
@@ -221,8 +221,13 @@ def test_custom_and_inherited_items():
 )
 def test_good_ids(id):
     """Test good human-readable IDs for validity."""
+    from pydantic import BaseModel
 
-    assert HumanReadableIdentifier(id)
+    class TestModel(BaseModel):
+        test_id: HumanReadableIdentifier
+
+    model = TestModel(test_id=id)
+    assert model.test_id == str(id)
 
 
 @pytest.mark.parametrize(
@@ -242,9 +247,13 @@ def test_good_ids(id):
 )
 def test_bad_ids(id):
     """Test bad human-readable IDs for invalidity."""
+    from pydantic import BaseModel
+
+    class TestModel(BaseModel):
+        test_id: HumanReadableIdentifier
 
     with pytest.raises(pydantic.ValidationError):
-        HumanReadableIdentifier(id)
+        TestModel(test_id=id)
 
 
 def test_cell_with_inlined_reference():
@@ -265,11 +274,11 @@ def test_cell_with_inlined_reference():
     )
 
     assert cell
-    assert len(cell.relationships) == 1
+    assert len(cell.relationships or []) == 1
 
     cell = Cell(**json.loads(cell.model_dump_json()))
     assert cell
-    assert len(cell.relationships) == 1
+    assert len(cell.relationships or []) == 1
 
     # test from raw json
     cell_json = {
@@ -287,7 +296,7 @@ def test_cell_with_inlined_reference():
 
     cell = Cell(**cell_json)
     assert cell
-    assert len(cell.relationships) == 1
+    assert len(cell.relationships or []) == 1
 
     cell_json_2 = {
         "item_id": "abcd-1-2-3",
@@ -304,7 +313,7 @@ def test_cell_with_inlined_reference():
 
     cell = Cell(**cell_json_2)
     assert cell
-    assert len(cell.relationships) == 0
+    assert len(cell.relationships or []) == 0
 
     cell_json_3 = {
         "item_id": "abcd-1-2-3",
@@ -321,7 +330,7 @@ def test_cell_with_inlined_reference():
 
     cell = Cell(**cell_json_3)
     assert cell
-    assert len(cell.relationships) == 1
+    assert len(cell.relationships or []) == 1
 
 
 def test_molar_mass():
@@ -379,9 +388,13 @@ def test_good_refcodes(refcode):
 )
 def test_bad_refcodes(refcode):
     """Test bad refcodes for invalidity."""
+    from pydantic import BaseModel
+
+    class TestModel(BaseModel):
+        test_refcode: Refcode
 
     with pytest.raises(pydantic.ValidationError):
-        Refcode(refcode)
+        TestModel(test_refcode=refcode)
 
 
 @pytest.mark.parametrize(
@@ -409,9 +422,13 @@ def test_good_display_name(display_name):
 )
 def test_bad_display_name(display_name):
     """Test bad display_name for invalidity."""
+    from pydantic import BaseModel, ValidationError
 
-    with pytest.raises(ValueError):
-        DisplayName(display_name)
+    class TestModel(BaseModel):
+        test_name: DisplayName
+
+    with pytest.raises(ValidationError):
+        TestModel(test_name=display_name)
 
 
 @pytest.mark.parametrize(
@@ -421,7 +438,14 @@ def test_bad_display_name(display_name):
     ],
 )
 def test_good_email(contact_email):
-    assert EmailStr(contact_email)
+    """Test that valid emails pass validation."""
+    from pydantic import BaseModel
+
+    class TestEmail(BaseModel):
+        email: EmailStr
+
+    result = TestEmail(email=contact_email)
+    assert result.email == contact_email
 
 
 @pytest.mark.parametrize(
@@ -434,5 +458,11 @@ def test_good_email(contact_email):
     ],
 )
 def test_bad_email(contact_email):
-    with pytest.raises(ValueError):
-        assert EmailStr(contact_email)
+    """Test that invalid emails fail validation."""
+    from pydantic import BaseModel, ValidationError
+
+    class TestEmail(BaseModel):
+        email: EmailStr
+
+    with pytest.raises(ValidationError):
+        TestEmail(email=contact_email)

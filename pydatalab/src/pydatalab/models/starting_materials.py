@@ -21,7 +21,7 @@ class StartingMaterial(Item, HasSynthesisInfo):
     )
     """A unique barcode provided by an external source, e.g., cheminventory."""
 
-    date: IsoformatDateTime | None = Field(alias="Date Acquired")
+    date: IsoformatDateTime | None = Field(None, alias="Date Acquired")
     """The date the item was acquired"""
 
     date_opened: IsoformatDateTime | None = Field(alias="Date opened")
@@ -42,7 +42,7 @@ class StartingMaterial(Item, HasSynthesisInfo):
     )
     """A string describing any GHS hazard codes associated with this item. See https://pubchem.ncbi.nlm.nih.gov/ghs/ for code definitions."""
 
-    name: str | None = Field(alias="Container Name")
+    name: str | None = Field(None, alias="Container Name")
     """The name of the substance in the container."""
 
     size: str | None = Field(alias="Container Size")

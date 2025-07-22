@@ -1113,8 +1113,8 @@ def save_item():
         )
 
     # remove collections and creators and any other reference fields
-    item.pop("collections")
-    item.pop("creators")
+    item.pop("collections", None)
+    item.pop("creators", None)
 
     result = flask_mongo.db.items.update_one(
         {"item_id": item_id},

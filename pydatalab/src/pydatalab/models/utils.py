@@ -4,7 +4,7 @@ import string
 from collections.abc import Callable
 from enum import Enum
 from functools import partial
-from typing import Annotated, Any, TypeAlias
+from typing import Any, TypeAlias
 
 import pint
 from bson.objectid import ObjectId
@@ -12,7 +12,6 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    StringConstraints,
     field_validator,
     model_validator,
 )
@@ -43,23 +42,56 @@ leading or trailing punctuation.
 """
 
 
-HumanReadableIdentifier = Annotated[
-    str,
-    StringConstraints(min_length=1, max_length=40, strip_whitespace=True, pattern=IDENTIFIER_REGEX),
-]
-"""Used to constrain human-readable and URL-safe identifiers for items."""
+class HumanReadableIdentifier(str):
+    """Used to constrain human-readable and URL-safe identifiers for items."""
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source_type, handler):
+        import re
+
+        from pydantic_core import core_schema
+
+        def validate_identifier(v):
+            if not isinstance(v, str):
+                v = str(v)
+            v = v.strip()
+            if len(v) < 1 or len(v) > 40:
+                raise ValueError("String must be between 1 and 40 characters")
+            if not re.match(IDENTIFIER_REGEX, v):
+                raise ValueError(f"String does not match required pattern: {IDENTIFIER_REGEX}")
+            return cls(v)
+
+        return core_schema.no_info_after_validator_function(
+            validate_identifier,
+            core_schema.union_schema([core_schema.str_schema(), core_schema.int_schema()]),
+        )
 
 
-Refcode = Annotated[
-    str,
-    StringConstraints(
-        min_length=1,
-        max_length=40,
-        strip_whitespace=True,
-        pattern=r"^[a-z]{2,10}:" + IDENTIFIER_REGEX[1:],
-    ),
-]
-"""A regex to match refcodes that have a lower-case prefix between 2-10 chars, followed by a colon, and then the normal rules for an ID (url-safe etc.)."""
+class Refcode(str):
+    """A regex to match refcodes that have a lower-case prefix between 2-10 chars, followed by a colon, and then the normal rules for an ID (url-safe etc.)."""
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source_type, handler):
+        import re
+
+        from pydantic_core import core_schema
+
+        refcode_pattern = r"^[a-z]{2,10}:" + IDENTIFIER_REGEX[1:]
+
+        def validate_refcode(v):
+            if not isinstance(v, str):
+                v = str(v)
+            v = v.strip()
+            if len(v) < 1 or len(v) > 40:
+                raise ValueError("String must be between 1 and 40 characters")
+            if not re.match(refcode_pattern, v):
+                raise ValueError(f"String does not match required pattern: {refcode_pattern}")
+            return cls(v)
+
+        return core_schema.no_info_after_validator_function(
+            validate_refcode,
+            core_schema.union_schema([core_schema.str_schema(), core_schema.int_schema()]),
+        )
 
 
 class UserRole(str, Enum):
@@ -242,6 +274,9 @@ class EntryReference(BaseModel):
     @classmethod
     def check_id_fields(cls, values):
         """Check that at least one of the possible identifier fields is provided."""
+        if not isinstance(values, dict):
+            return values
+
         id_fields = ("immutable_id", "item_id", "refcode")
 
         if all(values.get(f) is None for f in id_fields):

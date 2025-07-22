@@ -23,14 +23,14 @@ class Entry(BaseModel, abc.ABC):
         None,
         title="Immutable ID",
         alias="_id",
-        format="uuid",
+        json_schema_extra={"format": "uuid"},
     )
     """The immutable database ID of the entry."""
 
     last_modified: IsoformatDateTime | None = None
     """The timestamp at which the entry was last modified."""
 
-    relationships: list[TypedRelationship] | None = None
+    relationships: list[TypedRelationship] = Field(default_factory=list)
     """A list of related entries and their types."""
 
     @model_validator(mode="before")

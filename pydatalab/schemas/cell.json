@@ -124,27 +124,23 @@
           "title": "Last Modified"
         },
         "relationships": {
+          "items": {
+            "$ref": "#/$defs/TypedRelationship"
+          },
+          "title": "Relationships",
+          "type": "array"
+        },
+        "collection_id": {
           "anyOf": [
             {
-              "items": {
-                "$ref": "#/$defs/TypedRelationship"
-              },
-              "type": "array"
+              "type": "string"
             },
             {
-              "type": "null"
+              "type": "integer"
             }
           ],
           "default": null,
-          "title": "Relationships"
-        },
-        "collection_id": {
-          "default": null,
-          "maxLength": 40,
-          "minLength": 1,
-          "pattern": "^(?:[a-zA-Z0-9]+|[a-zA-Z0-9][a-zA-Z0-9._-]+[a-zA-Z0-9])$",
-          "title": "Collection Id",
-          "type": "string"
+          "title": "Collection Id"
         },
         "title": {
           "anyOf": [
@@ -223,10 +219,10 @@
         "item_id": {
           "anyOf": [
             {
-              "maxLength": 40,
-              "minLength": 1,
-              "pattern": "^(?:[a-zA-Z0-9]+|[a-zA-Z0-9][a-zA-Z0-9._-]+[a-zA-Z0-9])$",
               "type": "string"
+            },
+            {
+              "type": "integer"
             },
             {
               "type": "null"
@@ -238,10 +234,10 @@
         "refcode": {
           "anyOf": [
             {
-              "maxLength": 40,
-              "minLength": 1,
-              "pattern": "^[a-z]{2,10}:(?:[a-zA-Z0-9]+|[a-zA-Z0-9][a-zA-Z0-9._-]+[a-zA-Z0-9])$",
               "type": "string"
+            },
+            {
+              "type": "integer"
             },
             {
               "type": "null"
@@ -325,19 +321,11 @@
           "title": "Last Modified"
         },
         "relationships": {
-          "anyOf": [
-            {
-              "items": {
-                "$ref": "#/$defs/TypedRelationship"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Relationships"
+          "items": {
+            "$ref": "#/$defs/TypedRelationship"
+          },
+          "title": "Relationships",
+          "type": "array"
         },
         "size": {
           "anyOf": [
@@ -616,19 +604,11 @@
           "title": "Last Modified"
         },
         "relationships": {
-          "anyOf": [
-            {
-              "items": {
-                "$ref": "#/$defs/TypedRelationship"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Relationships"
+          "items": {
+            "$ref": "#/$defs/TypedRelationship"
+          },
+          "title": "Relationships",
+          "type": "array"
         },
         "identities": {
           "items": {
@@ -744,10 +724,10 @@
         "item_id": {
           "anyOf": [
             {
-              "maxLength": 40,
-              "minLength": 1,
-              "pattern": "^(?:[a-zA-Z0-9]+|[a-zA-Z0-9][a-zA-Z0-9._-]+[a-zA-Z0-9])$",
               "type": "string"
+            },
+            {
+              "type": "integer"
             },
             {
               "type": "null"
@@ -759,10 +739,10 @@
         "refcode": {
           "anyOf": [
             {
-              "maxLength": 40,
-              "minLength": 1,
-              "pattern": "^[a-z]{2,10}:(?:[a-zA-Z0-9]+|[a-zA-Z0-9][a-zA-Z0-9._-]+[a-zA-Z0-9])$",
               "type": "string"
+            },
+            {
+              "type": "integer"
             },
             {
               "type": "null"
@@ -865,34 +845,34 @@
       "title": "Last Modified"
     },
     "relationships": {
+      "items": {
+        "$ref": "#/$defs/TypedRelationship"
+      },
+      "title": "Relationships",
+      "type": "array"
+    },
+    "refcode": {
       "anyOf": [
         {
-          "items": {
-            "$ref": "#/$defs/TypedRelationship"
-          },
-          "type": "array"
+          "type": "string"
         },
         {
-          "type": "null"
+          "type": "integer"
         }
       ],
       "default": null,
-      "title": "Relationships"
-    },
-    "refcode": {
-      "default": null,
-      "maxLength": 40,
-      "minLength": 1,
-      "pattern": "^[a-z]{2,10}:(?:[a-zA-Z0-9]+|[a-zA-Z0-9][a-zA-Z0-9._-]+[a-zA-Z0-9])$",
-      "title": "Refcode",
-      "type": "string"
+      "title": "Refcode"
     },
     "item_id": {
-      "maxLength": 40,
-      "minLength": 1,
-      "pattern": "^(?:[a-zA-Z0-9]+|[a-zA-Z0-9][a-zA-Z0-9._-]+[a-zA-Z0-9])$",
-      "title": "Item Id",
-      "type": "string"
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        }
+      ],
+      "title": "Item Id"
     },
     "description": {
       "anyOf": [
@@ -915,6 +895,7 @@
           "type": "null"
         }
       ],
+      "default": null,
       "title": "Date"
     },
     "name": {
@@ -926,6 +907,7 @@
           "type": "null"
         }
       ],
+      "default": null,
       "title": "Name"
     },
     "files": {
@@ -1047,8 +1029,6 @@
   },
   "required": [
     "item_id",
-    "date",
-    "name",
     "cell_format",
     "cell_format_description",
     "cell_preparation_description",

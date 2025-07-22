@@ -53,13 +53,15 @@ class IsCollectable(BaseModel):
         if values.get("collections") is not None:
             new_ids = {coll.immutable_id for coll in values["collections"]}
             existing_collection_relationship_ids = set()
+
             if values.get("relationships") is not None:
                 existing_collection_relationship_ids = {
                     relationship.immutable_id
                     for relationship in values["relationships"]
                     if relationship.type == "collections"
                 }
-            else:
+
+            if "relationships" not in values:
                 values["relationships"] = []
 
             for collection in values.get("collections", []):
@@ -103,31 +105,51 @@ class HasSynthesisInfo(BaseModel):
 
         constituents_set = set()
         if values.get("synthesis_constituents") is not None:
+            existing_relationships = values.get("relationships", [])
             existing_parent_relationship_ids = set()
-            if values.get("relationships") is not None:
+
+            if existing_relationships:
                 existing_parent_relationship_ids = {
                     relationship.refcode or relationship.item_id
-                    for relationship in values["relationships"]
+                    for relationship in existing_relationships
                     if relationship.relation == RelationshipType.PARENT
                 }
-            else:
+
+            if "relationships" not in values:
                 values["relationships"] = []
 
             for constituent in values.get("synthesis_constituents", []):
-                # If this is an inline relationship, just skip it
-                if isinstance(constituent.item, InlineSubstance):
-                    continue
+                item_data = (
+                    constituent.get("item") if isinstance(constituent, dict) else constituent.item
+                )
 
-                constituent_id = constituent.item.refcode or constituent.item.item_id
+                # If this is an inline relationship (has name but no item_id/refcode), just skip it
+                if isinstance(item_data, dict):
+                    if not item_data.get("item_id") and not item_data.get("refcode"):
+                        continue
+                    constituent_id = item_data.get("refcode") or item_data.get("item_id")
+                else:
+                    if isinstance(item_data, InlineSubstance):
+                        continue
+                    constituent_id = item_data.refcode or item_data.item_id
 
                 if constituent_id not in existing_parent_relationship_ids:
-                    relationship = TypedRelationship(
-                        relation=RelationshipType.PARENT,
-                        refcode=constituent.item.refcode,
-                        item_id=constituent.item.item_id,
-                        type=constituent.item.type,
-                        description="Is a constituent of",
-                    )
+                    if isinstance(item_data, dict):
+                        relationship = TypedRelationship(
+                            relation=RelationshipType.PARENT,
+                            refcode=item_data.get("refcode"),
+                            item_id=item_data.get("item_id"),
+                            type=item_data.get("type"),
+                            description="Is a constituent of",
+                        )
+                    else:
+                        relationship = TypedRelationship(
+                            relation=RelationshipType.PARENT,
+                            refcode=item_data.refcode,
+                            item_id=item_data.item_id,
+                            type=item_data.type,
+                            description="Is a constituent of",
+                        )
                     values["relationships"].append(relationship)
 
                 # Accumulate all constituent IDs in a set to filter those that have been deleted
@@ -135,15 +157,16 @@ class HasSynthesisInfo(BaseModel):
 
         # Finally, filter out any parent relationships with item that were removed
         # from the synthesis constituents
-        values["relationships"] = [
-            rel
-            for rel in values["relationships"]
-            if not (
-                (rel.refcode or rel.item_id) not in constituents_set
-                and rel.relation == RelationshipType.PARENT
-                and rel.type in ("samples", "starting_materials")
-            )
-        ]
+        if "relationships" in values:
+            values["relationships"] = [
+                rel
+                for rel in values["relationships"]
+                if not (
+                    (rel.refcode or rel.item_id) not in constituents_set
+                    and rel.relation == RelationshipType.PARENT
+                    and rel.type in ("samples", "starting_materials")
+                )
+            ]
 
         return values
 

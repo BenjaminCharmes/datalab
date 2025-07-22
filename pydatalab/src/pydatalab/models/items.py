@@ -32,10 +32,10 @@ class Item(Entry, HasOwner, HasRevisionControl, IsCollectable, HasBlocks, abc.AB
     description: str | None = None
     """A description of the item, either in plain-text or a markup language."""
 
-    date: IsoformatDateTime | None
+    date: IsoformatDateTime | None = None
     """A relevant 'creation' timestamp for the entry (e.g., purchase date, synthesis date)."""
 
-    name: str | None
+    name: str | None = None
     """An optional human-readable/usable name for the entry."""
 
     files: list[File] | None = None
