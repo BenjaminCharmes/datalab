@@ -111,7 +111,13 @@ class PyObjectId(ObjectId):
     def __get_pydantic_core_schema__(cls, source_type: Any, handler: Any) -> core_schema.CoreSchema:
         return core_schema.no_info_after_validator_function(
             cls.validate,
-            core_schema.str_schema(),
+            core_schema.union_schema(
+                [
+                    core_schema.str_schema(),
+                    core_schema.is_instance_schema(ObjectId),
+                    core_schema.is_instance_schema(cls),
+                ]
+            ),
             serialization=core_schema.plain_serializer_function_ser_schema(
                 lambda x: str(x) if x else None, when_used="json"
             ),
@@ -141,7 +147,12 @@ class IsoformatDateTime(datetime.datetime):
     def __get_pydantic_core_schema__(cls, source_type: Any, handler: Any) -> core_schema.CoreSchema:
         return core_schema.no_info_after_validator_function(
             cls.validate,
-            core_schema.str_schema(),
+            core_schema.union_schema(
+                [
+                    core_schema.str_schema(),
+                    core_schema.is_instance_schema(datetime.datetime),
+                ]
+            ),
             serialization=core_schema.plain_serializer_function_ser_schema(
                 lambda x: x.isoformat() if x else None, when_used="json"
             ),
@@ -150,15 +161,23 @@ class IsoformatDateTime(datetime.datetime):
     @classmethod
     def validate(cls, v) -> datetime.datetime | None:
         """Cast isoformat strings to datetimes and enforce UTC if tzinfo is missing."""
+        if v is None:
+            return None
+
+        if isinstance(v, datetime.datetime):
+            if v.tzinfo is None:
+                v = v.replace(tzinfo=datetime.timezone.utc)
+            return v
+
         if isinstance(v, str):
-            if v in ["0", " "]:
+            if v in ["0", " ", ""]:
                 return None
             v = datetime.datetime.fromisoformat(v)
+            if v.tzinfo is None:
+                v = v.replace(tzinfo=datetime.timezone.utc)
+            return v
 
-        if v.tzinfo is None:
-            v = v.replace(tzinfo=datetime.timezone.utc)
-
-        return v
+        raise ValueError(f"Invalid datetime value: {v}")
 
 
 JSON_ENCODERS = {
