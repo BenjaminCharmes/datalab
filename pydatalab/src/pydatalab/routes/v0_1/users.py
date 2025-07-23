@@ -40,6 +40,8 @@ def save_user(user_id):
 
     try:
         if display_name:
+            if display_name.strip() == "":
+                raise ValueError("Display name cannot be empty or contain only spaces")
             update["display_name"] = display_name
 
         if contact_email or contact_email in (None, ""):

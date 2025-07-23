@@ -134,14 +134,14 @@ class HasSynthesisInfo(BaseModel):
                 for relationship in existing_relationships:
                     if isinstance(relationship, dict):
                         relation = relationship.get("relation")
-                        if relation == RelationshipType.PARENT or relation == "parent":
+                        if relation == RelationshipType.PARENT.value or relation == "parent":
                             ref_id = relationship.get("refcode") or relationship.get("item_id")
                             if ref_id:
                                 existing_parent_relationship_ids.add(ref_id)
                     else:
                         if (
                             hasattr(relationship, "relation")
-                            and relationship.relation == RelationshipType.PARENT
+                            and relationship.relation == RelationshipType.PARENT.value
                         ):
                             ref_id = getattr(relationship, "refcode", None) or getattr(
                                 relationship, "item_id", None
@@ -201,7 +201,7 @@ class HasSynthesisInfo(BaseModel):
 
                     is_duplicate_constituent_relationship = (
                         rel_id in constituents_set
-                        and relation == RelationshipType.PARENT
+                        and relation == RelationshipType.PARENT.value
                         and rel_type in ("samples", "starting_materials")
                     )
 
