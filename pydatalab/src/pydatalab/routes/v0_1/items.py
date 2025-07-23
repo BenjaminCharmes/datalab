@@ -566,6 +566,9 @@ def _create_sample(
 
     new_sample["date"] = new_sample.get("date", datetime.datetime.now(tz=datetime.timezone.utc))
     try:
+        if "immutable_id" in new_sample:
+            del new_sample["immutable_id"]
+
         data_model: Item = model(**new_sample)
 
     except ValidationError as error:

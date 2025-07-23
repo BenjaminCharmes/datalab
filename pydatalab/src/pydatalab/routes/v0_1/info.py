@@ -57,7 +57,7 @@ class JSONAPIResponse(BaseModel):
 
 
 class MetaPerson(BaseModel):
-    dislay_name: str | None = None
+    display_name: str | None = None
     contact_email: str
 
 
