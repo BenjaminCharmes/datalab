@@ -44,6 +44,13 @@ class Entry(BaseModel, abc.ABC):
 
         return values
 
+    @model_validator(mode="after")
+    def validate_relationships(self):
+        """Ensure relationships is always a list."""
+        if self.relationships is None:
+            self.relationships = []
+        return self
+
     def to_reference(self, additional_fields: list[str] | None = None) -> "EntryReference":
         """Populate an EntryReference model from this entry, selecting additional fields to inline.
 

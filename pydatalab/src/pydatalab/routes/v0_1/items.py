@@ -357,57 +357,65 @@ def search_items():
         response list of dictionaries containing the matching items in order of
         descending match score.
     """
+    try:
+        query = request.args.get("query", type=str)
+        nresults = request.args.get("nresults", default=100, type=int)
+        types = request.args.get("types", default=None)
+        if isinstance(types, str):
+            # should figure out how to parse as list automatically
+            types = types.split(",")
 
-    query = request.args.get("query", type=str)
-    nresults = request.args.get("nresults", default=100, type=int)
-    types = request.args.get("types", default=None)
-    if isinstance(types, str):
-        # should figure out how to parse as list automatically
-        types = types.split(",")
+        pipeline = []
 
-    pipeline = []
+        if isinstance(query, str):
+            query = query.strip("'")
 
-    if isinstance(query, str):
-        query = query.strip("'")
-
-    if isinstance(query, str) and query.startswith("%"):
-        query = query.lstrip("%")
-        match_obj = {
-            "$text": {"$search": query},
-            **get_default_permissions(user_only=False),
-        }
-        if types is not None:
-            match_obj["type"] = {"$in": types}
-
-        pipeline.append({"$match": match_obj})
-        pipeline.append({"$sort": {"score": {"$meta": "textScore"}}})
-    else:
-        match_obj = {
-            "$or": [{field: {"$regex": query, "$options": "i"}} for field in ITEMS_FTS_FIELDS]
-        }
-        match_obj = {"$and": [get_default_permissions(user_only=False), match_obj]}
-        if types is not None:
-            match_obj["$and"].append({"type": {"$in": types}})
-
-        pipeline.append({"$match": match_obj})
-
-    pipeline.append({"$limit": nresults})
-    pipeline.append(
-        {
-            "$project": {
-                "_id": 0,
-                "type": 1,
-                "item_id": 1,
-                "name": 1,
-                "chemform": 1,
-                "refcode": 1,
+        if isinstance(query, str) and query.startswith("%"):
+            query = query.lstrip("%")
+            match_obj = {
+                "$text": {"$search": query},
+                **get_default_permissions(user_only=False),
             }
-        }
-    )
+            if types is not None:
+                match_obj["type"] = {"$in": types}
 
-    cursor = flask_mongo.db.items.aggregate(pipeline)
+            pipeline.append({"$match": match_obj})
+            pipeline.append({"$sort": {"score": {"$meta": "textScore"}}})
+        else:
+            if not ITEMS_FTS_FIELDS:
+                match_obj = {"item_id": {"$regex": query, "$options": "i"}}
+            else:
+                match_obj = {
+                    "$or": [
+                        {field: {"$regex": query, "$options": "i"}} for field in ITEMS_FTS_FIELDS
+                    ]
+                }
+            match_obj = {"$and": [get_default_permissions(user_only=False), match_obj]}
+            if types is not None:
+                match_obj["$and"].append({"type": {"$in": types}})
 
-    return jsonify({"status": "success", "items": list(cursor)}), 200
+            pipeline.append({"$match": match_obj})
+
+        pipeline.append({"$limit": nresults})
+        pipeline.append(
+            {
+                "$project": {
+                    "_id": 0,
+                    "type": 1,
+                    "item_id": 1,
+                    "name": 1,
+                    "chemform": 1,
+                    "refcode": 1,
+                }
+            }
+        )
+
+        cursor = flask_mongo.db.items.aggregate(pipeline)
+
+        return jsonify({"status": "success", "items": list(cursor)}), 200
+    except Exception as e:
+        LOGGER.exception(f"Error in search_items: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 def _create_sample(
@@ -640,7 +648,7 @@ def _create_sample(
     if data_model.type == "equipment":
         sample_list_entry["location"] = data_model.location
 
-    data = (
+    return (
         {
             "status": "success",
             "item_id": data_model.item_id,
@@ -648,8 +656,6 @@ def _create_sample(
         },
         201,  # 201: Created
     )
-
-    return data
 
 
 @ITEMS.route("/new-sample/", methods=["POST"])

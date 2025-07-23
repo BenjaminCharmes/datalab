@@ -166,24 +166,19 @@ class HasSynthesisInfo(BaseModel):
                     item_id = item_data.get("item_id")
                     refcode = item_data.get("refcode")
                     item_type = item_data.get("type")
-
-                    if not item_id and not refcode:
-                        continue
-
-                    constituent_id = refcode or item_id
                 else:
                     item_id = getattr(item_data, "item_id", None)
                     refcode = getattr(item_data, "refcode", None)
                     item_type = getattr(item_data, "type", None)
 
-                    if not item_id and not refcode:
-                        continue
+                if not item_id and not refcode:
+                    continue
 
-                    constituent_id = refcode or item_id
+                constituent_id = refcode or item_id
 
                 if constituent_id and constituent_id not in existing_parent_relationship_ids:
                     relationship_dict = {
-                        "relation": RelationshipType.PARENT,
+                        "relation": RelationshipType.PARENT.value,
                         "refcode": refcode,
                         "item_id": item_id,
                         "type": item_type,
@@ -204,11 +199,13 @@ class HasSynthesisInfo(BaseModel):
                         relation = getattr(rel, "relation", None)
                         rel_type = getattr(rel, "type", None)
 
-                    if not (
-                        rel_id not in constituents_set
+                    is_duplicate_constituent_relationship = (
+                        rel_id in constituents_set
                         and relation == RelationshipType.PARENT
                         and rel_type in ("samples", "starting_materials")
-                    ):
+                    )
+
+                    if not is_duplicate_constituent_relationship:
                         filtered_relationships.append(rel)
 
                 values["relationships"] = filtered_relationships

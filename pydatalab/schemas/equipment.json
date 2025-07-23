@@ -856,6 +856,7 @@
           "type": "null"
         }
       ],
+      "default": null,
       "title": "Serial Numbers"
     },
     "manufacturer": {
@@ -867,6 +868,7 @@
           "type": "null"
         }
       ],
+      "default": null,
       "title": "Manufacturer"
     },
     "location": {
@@ -878,6 +880,7 @@
           "type": "null"
         }
       ],
+      "default": null,
       "title": "Location"
     },
     "contact": {
@@ -889,15 +892,12 @@
           "type": "null"
         }
       ],
+      "default": null,
       "title": "Contact"
     }
   },
   "required": [
-    "item_id",
-    "serial_numbers",
-    "manufacturer",
-    "location",
-    "contact"
+    "item_id"
   ],
   "title": "Equipment",
   "type": "object"

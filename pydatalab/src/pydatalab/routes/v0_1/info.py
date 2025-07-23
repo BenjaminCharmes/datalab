@@ -81,12 +81,13 @@ class Info(Attributes, Meta):
         """Ensure features are properly serialized for frontend consumption."""
         if hasattr(self.features, "model_dump"):
             features_dict = self.features.model_dump()
+        elif hasattr(self.features, "dict"):
+            features_dict = self.features.dict()
         else:
-            features_dict = (
-                self.features.dict() if hasattr(self.features, "dict") else self.features
-            )
+            features_dict = self.features
 
-        self.features = FeatureFlags(**features_dict)
+        if not isinstance(self.features, FeatureFlags):
+            self.features = FeatureFlags(**features_dict)
         return self
 
 
@@ -110,7 +111,9 @@ def get_info():
     """
     attributes_data = {
         "identifier_prefix": CONFIG.IDENTIFIER_PREFIX,
-        "features": FEATURE_FLAGS.model_dump(),
+        "features": FEATURE_FLAGS.model_dump()
+        if hasattr(FEATURE_FLAGS, "model_dump")
+        else FEATURE_FLAGS.__dict__,
     }
 
     if CONFIG.DEPLOYMENT_METADATA:
