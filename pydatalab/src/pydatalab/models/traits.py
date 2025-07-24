@@ -49,17 +49,17 @@ class IsCollectable(BaseModel):
     @classmethod
     def add_missing_collection_relationships(cls, values):
         if values.get("collections") is not None:
-            new_ids = set()
+            collection_ids_set = set()
+
             for coll in values["collections"]:
                 if isinstance(coll, dict):
                     immutable_id = coll.get("immutable_id")
                 else:
                     immutable_id = getattr(coll, "immutable_id", None)
                 if immutable_id:
-                    new_ids.add(immutable_id)
+                    collection_ids_set.add(immutable_id)
 
             existing_collection_relationship_ids = set()
-
             if values.get("relationships") is not None:
                 for relationship in values["relationships"]:
                     if isinstance(relationship, dict):
@@ -74,39 +74,35 @@ class IsCollectable(BaseModel):
                             immutable_id = getattr(relationship, "immutable_id", None)
                             if immutable_id:
                                 existing_collection_relationship_ids.add(immutable_id)
-
-            if "relationships" not in values:
+            else:
                 values["relationships"] = []
 
-            for collection in values.get("collections", []):
-                if isinstance(collection, dict):
-                    immutable_id = collection.get("immutable_id")
-                else:
-                    immutable_id = getattr(collection, "immutable_id", None)
-
-                if immutable_id and immutable_id not in existing_collection_relationship_ids:
+            for collection_id in collection_ids_set:
+                if collection_id not in existing_collection_relationship_ids:
                     relationship_dict = {
                         "relation": None,
-                        "immutable_id": immutable_id,
+                        "immutable_id": collection_id,
                         "type": "collections",
                         "description": "Is a member of",
                     }
                     values["relationships"].append(relationship_dict)
 
-            if "relationships" in values:
-                filtered_relationships = []
-                for d in values.get("relationships", []):
-                    if isinstance(d, dict):
-                        rel_type = d.get("type")
-                        immutable_id = d.get("immutable_id")
-                    else:
-                        rel_type = getattr(d, "type", None)
-                        immutable_id = getattr(d, "immutable_id", None)
-
-                    if rel_type != "collections" or immutable_id in new_ids:
-                        filtered_relationships.append(d)
-
-                values["relationships"] = filtered_relationships
+            values["relationships"] = [
+                rel
+                for rel in values["relationships"]
+                if not (
+                    (
+                        isinstance(rel, dict)
+                        and rel.get("type") == "collections"
+                        and rel.get("immutable_id") not in collection_ids_set
+                    )
+                    or (
+                        hasattr(rel, "type")
+                        and rel.type == "collections"
+                        and getattr(rel, "immutable_id", None) not in collection_ids_set
+                    )
+                )
+            ]
 
         return values
 
@@ -126,6 +122,9 @@ class HasSynthesisInfo(BaseModel):
         """Add any missing sample synthesis constituents to parent relationships"""
         from pydatalab.models.relationships import RelationshipType
 
+        if not isinstance(values, dict):
+            return values
+
         if values.get("synthesis_constituents") is not None:
             existing_relationships = values.get("relationships", [])
             existing_parent_relationship_ids = set()
@@ -134,14 +133,14 @@ class HasSynthesisInfo(BaseModel):
                 for relationship in existing_relationships:
                     if isinstance(relationship, dict):
                         relation = relationship.get("relation")
-                        if relation == RelationshipType.PARENT.value or relation == "parent":
+                        if relation == RelationshipType.PARENT or relation == "parent":
                             ref_id = relationship.get("refcode") or relationship.get("item_id")
                             if ref_id:
                                 existing_parent_relationship_ids.add(ref_id)
                     else:
                         if (
                             hasattr(relationship, "relation")
-                            and relationship.relation == RelationshipType.PARENT.value
+                            and relationship.relation == RelationshipType.PARENT
                         ):
                             ref_id = getattr(relationship, "refcode", None) or getattr(
                                 relationship, "item_id", None
@@ -152,7 +151,7 @@ class HasSynthesisInfo(BaseModel):
             if "relationships" not in values:
                 values["relationships"] = []
 
-            constituents_set = set()
+            current_constituents_set = set()
             for constituent in values.get("synthesis_constituents", []):
                 if isinstance(constituent, dict):
                     item_data = constituent.get("item")
@@ -175,6 +174,7 @@ class HasSynthesisInfo(BaseModel):
                     continue
 
                 constituent_id = refcode or item_id
+                current_constituents_set.add(constituent_id)
 
                 if constituent_id and constituent_id not in existing_parent_relationship_ids:
                     relationship_dict = {
@@ -185,7 +185,6 @@ class HasSynthesisInfo(BaseModel):
                         "description": "Is a constituent of",
                     }
                     values["relationships"].append(relationship_dict)
-                    constituents_set.add(constituent_id)
 
             if "relationships" in values:
                 filtered_relationships = []
@@ -194,18 +193,20 @@ class HasSynthesisInfo(BaseModel):
                         rel_id = rel.get("refcode") or rel.get("item_id")
                         relation = rel.get("relation")
                         rel_type = rel.get("type")
+                        description = rel.get("description")
                     else:
                         rel_id = getattr(rel, "refcode", None) or getattr(rel, "item_id", None)
                         relation = getattr(rel, "relation", None)
                         rel_type = getattr(rel, "type", None)
+                        description = getattr(rel, "description", None)
 
-                    is_duplicate_constituent_relationship = (
-                        rel_id in constituents_set
-                        and relation == RelationshipType.PARENT.value
+                    is_constituent_relationship = (
+                        relation == RelationshipType.PARENT
                         and rel_type in ("samples", "starting_materials")
+                        and description == "Is a constituent of"
                     )
 
-                    if not is_duplicate_constituent_relationship:
+                    if not is_constituent_relationship or rel_id in current_constituents_set:
                         filtered_relationships.append(rel)
 
                 values["relationships"] = filtered_relationships

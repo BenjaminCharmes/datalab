@@ -167,6 +167,7 @@
               "type": "null"
             }
           ],
+          "default": null,
           "title": "Quantity"
         },
         "unit": {
@@ -176,8 +177,7 @@
         }
       },
       "required": [
-        "item",
-        "quantity"
+        "item"
       ],
       "title": "Constituent",
       "type": "object"

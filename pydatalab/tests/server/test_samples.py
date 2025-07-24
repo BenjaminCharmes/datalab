@@ -415,7 +415,7 @@ def test_copy_from_sample(client, complicated_sample):
 
 @pytest.mark.dependency(depends=["test_copy_from_sample"])
 def test_create_multiple_samples(client, complicated_sample):
-    samples = [complicated_sample, complicated_sample.copy()]
+    samples = [complicated_sample, complicated_sample.model_copy()]
     samples[0].item_id = "another_new_complicated_sample"
     samples[1].item_id = "additional_new_complicated_sample"
 
@@ -482,12 +482,13 @@ def test_create_cell(client, default_cell):
     assert cell["electrolyte"][1]["item"]["chemform"] == "NaCl"
 
     assert (
-        cell["positive_electrode"][0]["item"]["name"]
-        == default_cell.positive_electrode[0].item.name
+        cell["positive_electrode"][0]["item"]["item_id"]
+        == default_cell.positive_electrode[0].item.item_id
     )
+
     assert (
-        cell["negative_electrode"][0]["item"]["name"]
-        == default_cell.negative_electrode[0].item.name
+        cell["negative_electrode"][0]["item"]["item_id"]
+        == default_cell.negative_electrode[0].item.item_id
     )
 
 

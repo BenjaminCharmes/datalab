@@ -33,6 +33,7 @@
               "type": "null"
             }
           ],
+          "default": null,
           "title": "Quantity"
         },
         "unit": {
@@ -42,8 +43,7 @@
         }
       },
       "required": [
-        "item",
-        "quantity"
+        "item"
       ],
       "title": "CellComponent",
       "type": "object"

@@ -17,7 +17,7 @@ from pydatalab.models.items import Item
 from pydatalab.models.people import Person
 from pydatalab.models.relationships import RelationshipType
 from pydatalab.models.utils import generate_unique_refcode
-from pydatalab.mongo import ITEMS_FTS_FIELDS, flask_mongo
+from pydatalab.mongo import flask_mongo
 from pydatalab.permissions import PUBLIC_USER_ID, active_users_or_get_only, get_default_permissions
 
 ITEMS = Blueprint("items", __name__)
@@ -381,15 +381,12 @@ def search_items():
 
             pipeline.append({"$match": match_obj})
             pipeline.append({"$sort": {"score": {"$meta": "textScore"}}})
+
         else:
-            if not ITEMS_FTS_FIELDS:
-                match_obj = {"item_id": {"$regex": query, "$options": "i"}}
-            else:
-                match_obj = {
-                    "$or": [
-                        {field: {"$regex": query, "$options": "i"}} for field in ITEMS_FTS_FIELDS
-                    ]
-                }
+            regex_fields = ["item_id", "name", "description", "chemform", "refcode"]
+            match_obj = {
+                "$or": [{field: {"$regex": query, "$options": "i"}} for field in regex_fields]
+            }
             match_obj = {"$and": [get_default_permissions(user_only=False), match_obj]}
             if types is not None:
                 match_obj["$and"].append({"type": {"$in": types}})
@@ -451,13 +448,15 @@ def _create_sample(
         # the provided item_id, name, and date take precedence over the copied parameters, if provided
         try:
             copied_doc["item_id"] = sample_dict["item_id"]
+            copied_doc.pop("_id", None)
         except KeyError:
             return (
                 dict(
                     status="error",
                     message=f"Request to copy item with id {copy_from_item_id} to new item failed because the target new item_id was not provided.",
+                    item_id=sample_dict["item_id"],
                 ),
-                400,
+                404,
             )
 
         copied_doc["name"] = sample_dict.get("name")
@@ -1041,7 +1040,6 @@ def save_item():
         "creators",
         "creator_ids",
         "item_id",
-        "relationships",
     ):
         if k in updated_data:
             del updated_data[k]
@@ -1086,18 +1084,46 @@ def save_item():
             404,
         )
 
-    if updated_data.get("collections", []):
-        try:
-            updated_data["collections"] = _check_collections(updated_data)
-        except ValueError as exc:
-            return (
-                dict(
-                    status="error",
-                    message=f"Cannot update {item_id!r} with missing collections {updated_data['collections']!r}: {exc}",
-                    item_id=item_id,
-                ),
-                401,
-            )
+    if "collections" in updated_data:
+        if updated_data.get("collections", []):
+            try:
+                updated_data["collections"] = _check_collections(updated_data)
+            except ValueError as exc:
+                return (
+                    dict(
+                        status="error",
+                        message=f"Cannot update {item_id!r} with missing collections {updated_data['collections']!r}: {exc}",
+                        item_id=item_id,
+                    ),
+                    401,
+                )
+
+        existing_item = flask_mongo.db.items.find_one({"item_id": item_id})
+        if existing_item:
+            existing_relationships = existing_item.get("relationships", [])
+            non_collection_relationships = [
+                rel for rel in existing_relationships if rel.get("type") != "collections"
+            ]
+
+            collection_relationships = []
+            for coll in updated_data.get("collections", []):
+                immutable_id = coll.get("immutable_id")
+                if immutable_id:
+                    if isinstance(immutable_id, str):
+                        from bson import ObjectId
+
+                        immutable_id = ObjectId(immutable_id)
+
+                    collection_relationships.append(
+                        {
+                            "relation": None,
+                            "immutable_id": immutable_id,
+                            "type": "collections",
+                            "description": "Is a member of",
+                        }
+                    )
+
+            updated_data["relationships"] = non_collection_relationships + collection_relationships
 
     item_type = item["type"]
     item.update(updated_data)

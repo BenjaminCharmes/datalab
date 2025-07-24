@@ -298,7 +298,7 @@ class Constituent(BaseModel):
     item: EntryReference | InlineSubstance
     """A reference to item (sample or starting material) entry for the constituent substance."""
 
-    quantity: float | None = Field(..., ge=0)
+    quantity: float | None = Field(default=None, ge=0)
     """The amount of the constituent material used to create the sample."""
 
     unit: str = Field("g")
