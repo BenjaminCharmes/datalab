@@ -341,13 +341,13 @@ def test_saved_sample_has_new_relationships(client, default_sample_dict, complic
     """
 
     default_sample_dict["item_id"] = "debug"
+
     response = client.post("/new-sample/", json=default_sample_dict)
 
     assert response.json
 
-    response = client.get(
-        f"/get-item-data/{default_sample_dict['item_id']}",
-    )
+    response = client.get(f"/get-item-data/{default_sample_dict['item_id']}")
+
     new_refcode = response.json["item_data"]["refcode"]
     assert new_refcode.startswith("test:")
 
@@ -356,7 +356,11 @@ def test_saved_sample_has_new_relationships(client, default_sample_dict, complic
     sample_dict = response.json["item_data"]
     sample_dict["synthesis_constituents"] = [
         {
-            "item": {"item_id": complicated_sample.item_id, "type": "samples"},
+            "item": {
+                "item_id": complicated_sample.item_id,
+                "type": "samples",
+                "name": complicated_sample.name,
+            },
             "quantity": 25.2,
             "unit": "g",
         }
@@ -366,15 +370,22 @@ def test_saved_sample_has_new_relationships(client, default_sample_dict, complic
         "/save-item/", json={"item_id": sample_dict["item_id"], "data": sample_dict}
     )
 
-    # Saving this link *should* add a searchable relationship in the database on both the new and old sample
+    print(response.status_code)
+    print(response.data)
+
     response = client.get(
         f"/get-item-data/{default_sample_dict['item_id']}",
     )
+
+    print(response.status_code)
+    print(response.data)
+
     assert complicated_sample.item_id in response.json["parent_items"]
 
     response = client.get(
         f"/get-item-data/{complicated_sample.item_id}",
     )
+
     assert sample_dict["item_id"] in response.json["child_items"]
 
 
@@ -692,6 +703,7 @@ def test_items_added_to_existing_collection(client, default_collection, default_
     assert response.status_code == 200, response.json
 
     response = client.get(f"/get-item-data/{new_id2}")
+
     assert response.status_code == 200, response.json
     assert "test_collection_2" in [
         d["collection_id"] for d in response.json["item_data"]["collections"]

@@ -109,22 +109,14 @@ def get_info():
     versions, features and so on.
 
     """
-    attributes_data = {
-        "identifier_prefix": CONFIG.IDENTIFIER_PREFIX,
-        "features": FEATURE_FLAGS.model_dump()
-        if hasattr(FEATURE_FLAGS, "model_dump")
-        else FEATURE_FLAGS.__dict__,
-    }
-
-    if CONFIG.DEPLOYMENT_METADATA:
-        deployment_meta = CONFIG.DEPLOYMENT_METADATA.model_dump(exclude_none=True)
-        attributes_data.update(deployment_meta)
+    metadata = _get_deployment_metadata_once().copy()
+    info = Info(**metadata)
 
     return (
         jsonify(
             json.loads(
                 JSONAPIResponse(
-                    data=Data(id="/", type="info", attributes=Attributes(**attributes_data)),
+                    data=Data(id="/", type="info", attributes=info),
                     meta=Meta(query=request.query_string.decode() if request.query_string else ""),
                     links=Links(self=request.url),
                 ).model_dump_json()

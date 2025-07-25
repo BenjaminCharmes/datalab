@@ -904,7 +904,6 @@ def get_item_data(
             doc = None
 
         if not doc:
-            LOGGER.error(f"No document found for {match}")
             return (
                 jsonify(
                     {
@@ -1040,6 +1039,7 @@ def save_item():
         "creators",
         "creator_ids",
         "item_id",
+        "relationships",
     ):
         if k in updated_data:
             del updated_data[k]
@@ -1084,46 +1084,54 @@ def save_item():
             404,
         )
 
-    if "collections" in updated_data:
-        if updated_data.get("collections", []):
-            try:
-                updated_data["collections"] = _check_collections(updated_data)
-            except ValueError as exc:
-                return (
-                    dict(
-                        status="error",
-                        message=f"Cannot update {item_id!r} with missing collections {updated_data['collections']!r}: {exc}",
-                        item_id=item_id,
-                    ),
-                    401,
+    if updated_data.get("collections", []):
+        try:
+            updated_data["collections"] = _check_collections(updated_data)
+        except ValueError as exc:
+            return (
+                dict(
+                    status="error",
+                    message=f"Cannot update {item_id!r} with missing collections {updated_data['collections']!r}: {exc}",
+                    item_id=item_id,
+                ),
+                401,
+            )
+
+    existing_item = flask_mongo.db.items.find_one({"item_id": item_id})
+    if existing_item:
+        existing_relationships = existing_item.get("relationships", [])
+        non_collection_relationships = [
+            rel for rel in existing_relationships if rel.get("type") != "collections"
+        ]
+
+        collection_relationships = []
+        for coll in updated_data.get("collections", []):
+            immutable_id = coll.get("immutable_id")
+            collection_id = coll.get("collection_id")
+
+            if immutable_id:
+                if isinstance(immutable_id, str):
+                    from bson import ObjectId
+
+                    immutable_id = ObjectId(immutable_id)
+            elif collection_id:
+                collection_doc = flask_mongo.db.collections.find_one(
+                    {"collection_id": collection_id}
+                )
+                if collection_doc:
+                    immutable_id = collection_doc["_id"]
+
+            if immutable_id:
+                collection_relationships.append(
+                    {
+                        "relation": None,
+                        "immutable_id": immutable_id,
+                        "type": "collections",
+                        "description": "Is a member of",
+                    }
                 )
 
-        existing_item = flask_mongo.db.items.find_one({"item_id": item_id})
-        if existing_item:
-            existing_relationships = existing_item.get("relationships", [])
-            non_collection_relationships = [
-                rel for rel in existing_relationships if rel.get("type") != "collections"
-            ]
-
-            collection_relationships = []
-            for coll in updated_data.get("collections", []):
-                immutable_id = coll.get("immutable_id")
-                if immutable_id:
-                    if isinstance(immutable_id, str):
-                        from bson import ObjectId
-
-                        immutable_id = ObjectId(immutable_id)
-
-                    collection_relationships.append(
-                        {
-                            "relation": None,
-                            "immutable_id": immutable_id,
-                            "type": "collections",
-                            "description": "Is a member of",
-                        }
-                    )
-
-            updated_data["relationships"] = non_collection_relationships + collection_relationships
+        updated_data["relationships"] = non_collection_relationships + collection_relationships
 
     item_type = item["type"]
     item.update(updated_data)
@@ -1136,7 +1144,6 @@ def save_item():
             by_alias=True,
             exclude={"collections", "creators"},
         )
-
     except ValidationError as exc:
         return (
             jsonify(
