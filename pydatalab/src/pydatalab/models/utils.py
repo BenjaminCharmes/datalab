@@ -120,7 +120,7 @@ class PintType(str):
         return core_schema.no_info_after_validator_function(
             cls.validate,
             core_schema.str_schema(),
-            serialization=core_schema.plain_serializer_function_ser_schema(str, when_used="json"),
+            serialization=core_schema.plain_serializer_function_ser_schema(str),
         )
 
     @classmethod
@@ -157,7 +157,7 @@ class PyObjectId(ObjectId):
                 ]
             ),
             serialization=core_schema.plain_serializer_function_ser_schema(
-                lambda x: str(x) if x else None, when_used="json"
+                lambda x: str(x) if x else None
             ),
         )
 
@@ -203,7 +203,7 @@ class IsoformatDateTime(datetime.datetime):
                 ]
             ),
             serialization=core_schema.plain_serializer_function_ser_schema(
-                lambda x: x.isoformat() if x else None, when_used="json"
+                lambda x: x.isoformat() if x else None
             ),
         )
 
