@@ -306,11 +306,12 @@ its importance when deploying a datalab instance.""",
         return v
 
     model_config = SettingsConfigDict(
-        env_prefix="pydatalab_",
+        env_prefix="PYDATALAB_",
         extra="allow",
         env_file=".env",
         env_file_encoding="utf-8",
         validate_assignment=True,
+        case_sensitive=False,
     )
 
     @classmethod
@@ -323,6 +324,17 @@ its importance when deploying a datalab instance.""",
         file_secret_settings,
     ):
         return (init_settings, env_settings, config_file_settings, file_secret_settings)
+
+    @field_validator("TESTING", mode="before")
+    @classmethod
+    def ensure_testing_from_env(cls, v):
+        """Ensure TESTING is read from environment for Docker compatibility."""
+        import os
+
+        if v is True:
+            return True
+        env_value = os.getenv("PYDATALAB_TESTING", "false").lower()
+        return env_value == "true"
 
     @model_validator(mode="before")
     @classmethod
