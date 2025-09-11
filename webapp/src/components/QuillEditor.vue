@@ -11,6 +11,29 @@ import "quill/dist/quill.snow.css";
 import MarkdownShortcuts from "quill-markdown-shortcuts";
 Quill.register("modules/markdownShortcuts", MarkdownShortcuts);
 
+import mermaid from "mermaid";
+window.mermaid = mermaid;
+import QuillMermaid from "quill-mermaid";
+import "quill-mermaid/dist/index.css";
+Quill.register(
+  {
+    "modules/mermaid": QuillMermaid,
+  },
+  true,
+);
+
+import TableUp, {
+  defaultCustomSelect,
+  TableAlign,
+  TableMenuContextmenu,
+  TableResizeScale,
+  TableSelection,
+} from "quill-table-up";
+import "quill-table-up/index.css";
+import "quill-table-up/table-creator.css";
+
+Quill.register({ [`modules/${TableUp.moduleName}`]: TableUp }, true);
+
 export default {
   name: "QuillEditor",
   props: {
@@ -22,10 +45,6 @@ export default {
       type: String,
       default: "Add a description",
     },
-    enableMarkdown: {
-      type: Boolean,
-      default: false,
-    },
     testId: {
       type: String,
       default: "quill-input",
@@ -35,7 +54,6 @@ export default {
   data() {
     return {
       quill: null,
-      isInternalUpdate: false,
     };
   },
   mounted() {
@@ -46,26 +64,48 @@ export default {
       this.quill = null;
     }
   },
-
   methods: {
     initializeQuill() {
+      mermaid.initialize({
+        startOnLoad: false,
+        theme: "default",
+      });
       const modules = {
         toolbar: [
           ["bold", "italic", "underline", "strike"],
           [{ script: "sub" }, { script: "super" }],
           [{ color: [] }, { background: [] }],
           ["clean"],
-
           [{ align: [] }],
           [{ list: "bullet" }, { list: "ordered" }],
           [{ indent: "-1" }, { indent: "+1" }],
-
           [{ header: [1, 2, 3, 4, 5, 6, false] }],
-
           ["link", "image"],
           ["blockquote", "code-block"],
+          [{ [TableUp.toolName]: [] }],
+          ["mermaid-chart"],
         ],
-        ...(this.enableMarkdown && { markdownShortcuts: {} }),
+        [TableUp.moduleName]: {
+          customSelect: defaultCustomSelect,
+          modules: [
+            { module: TableAlign },
+            { module: TableResizeScale },
+            { module: TableSelection },
+            { module: TableMenuContextmenu },
+          ],
+        },
+        mermaid: {
+          selectorOptions: {
+            onDestroy() {},
+            onRemove() {},
+            onEdit() {},
+          },
+          historyStackOptions: {
+            maxStack: 100,
+            delay: 1000,
+          },
+        },
+        markdownShortcuts: {},
       };
 
       this.quill = new Quill(this.$refs.quillContainer, {
@@ -79,12 +119,8 @@ export default {
       }
 
       this.quill.on("text-change", () => {
-        this.isInternalUpdate = true;
         const html = this.quill.root.innerHTML;
         this.$emit("update:modelValue", html === "<p><br></p>" ? "" : html);
-        this.$nextTick(() => {
-          this.isInternalUpdate = false;
-        });
       });
     },
   },
