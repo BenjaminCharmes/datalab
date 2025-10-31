@@ -776,20 +776,13 @@ export async function addRemoteFileToSample(file_entry, item_id) {
     );
 }
 
-export async function getItemGraph({ item_id = null, collection_id = null, max_depth = 1 } = {}) {
+export async function getItemGraph({ item_id = null, collection_id = null } = {}) {
   let url = `${API_URL}/item-graph`;
   if (item_id != null) {
     url = url + "/" + item_id;
   }
-  const params = new URLSearchParams();
   if (collection_id != null) {
-    params.append("collection_id", collection_id);
-  }
-  if (max_depth != null && max_depth > 1) {
-    params.append("max_depth", max_depth.toString());
-  }
-  if (params.toString()) {
-    url = url + "?" + params.toString();
+    url = url + "?collection_id=" + collection_id;
   }
 
   store.commit("setItemGraphIsLoading", true);
@@ -797,7 +790,6 @@ export async function getItemGraph({ item_id = null, collection_id = null, max_d
     .then(function (response_json) {
       store.commit("setItemGraph", { nodes: response_json.nodes, edges: response_json.edges });
       store.commit("setItemGraphIsLoading", false);
-      return response_json;
     })
     .catch((error) => {
       store.commit("setItemGraphIsLoading", false);
@@ -805,7 +797,6 @@ export async function getItemGraph({ item_id = null, collection_id = null, max_d
         title: "Graph Retrieval Failed",
         message: `Error retrieving item graph from API: ${error}`,
       });
-      throw error;
     });
 }
 
