@@ -3,6 +3,31 @@
     <template #header>Export Sample and Related Items</template>
 
     <template #body>
+      <div class="mb-4">
+        <h6>Relationship Graph</h6>
+        <GraphDepthControl v-model="graphDepth" :max-depth="5" />
+        <div style="position: relative; min-height: 300px">
+          <div
+            v-if="isGraphLoading"
+            class="position-absolute w-100 h-100 top-0 start-0 d-flex justify-content-center align-items-center"
+            style="background-color: rgba(255, 255, 255, 0.7); z-index: 100"
+          >
+            <div class="card p-3 shadow-sm">
+              <div class="text-center">
+                <i class="fa fa-sync fa-spin fa-2x text-primary mb-2"></i>
+                <p class="mb-0 fw-medium">Loading graph...</p>
+              </div>
+            </div>
+          </div>
+          <ItemGraph
+            :graph-data="graphData"
+            style="height: 300px; width: 100%; border: 1px solid #dee2e6; border-radius: 5px"
+            :default-graph-style="'elk-stress'"
+            :show-options="false"
+          />
+        </div>
+        <hr />
+      </div>
       <div v-if="isLoading" class="text-center">
         <i class="fa fa-spinner fa-spin fa-2x"></i>
         <p class="mt-2">Loading related samples...</p>
@@ -100,12 +125,16 @@
 
 <script>
 import Modal from "@/components/Modal";
+import ItemGraph from "@/components/ItemGraph";
+import GraphDepthControl from "@/components/GraphDepthControl";
+
 import {
   getItemGraph,
   startSampleExport,
   getExportStatus,
   getExportDownloadUrl,
   createNewCollection,
+  fetchItemGraph,
 } from "@/server_fetch_utils";
 import { DialogService } from "@/services/DialogService";
 
@@ -113,6 +142,8 @@ export default {
   name: "SampleGraphExportModal",
   components: {
     Modal,
+    ItemGraph,
+    GraphDepthControl,
   },
   props: {
     itemId: {
@@ -128,10 +159,13 @@ export default {
       relatedSamples: [],
       selectedSampleIds: [],
       selectAll: false,
-      pollInterval: null,
       createCollection: false,
       collectionId: "",
       collectionTitle: "",
+      pollInterval: null,
+      graphDepth: 1,
+      graphData: { nodes: [], edges: [] },
+      isGraphLoading: false,
     };
   },
   watch: {
@@ -142,6 +176,11 @@ export default {
         this.relatedSamples = [];
         this.selectedSampleIds = [];
       }
+    },
+    watch: {
+      graphDepth() {
+        this.loadGraphWithDepth();
+      },
     },
   },
   beforeUnmount() {
@@ -285,6 +324,22 @@ export default {
 
     show() {
       this.isModalOpen = true;
+      this.loadGraphWithDepth();
+      this.loadRelatedSamples();
+    },
+    async loadGraphWithDepth() {
+      this.isGraphLoading = true;
+      try {
+        const response = await fetchItemGraph({
+          item_id: this.itemId,
+          max_depth: this.graphDepth,
+        });
+        this.graphData = response;
+      } catch (error) {
+        console.error("Error loading graph:", error);
+      } finally {
+        this.isGraphLoading = false;
+      }
     },
   },
 };
