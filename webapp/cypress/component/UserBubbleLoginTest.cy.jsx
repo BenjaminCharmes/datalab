@@ -114,7 +114,9 @@ describe("UserBubbleLogin", () => {
             creator,
           },
         });
-        cy.get("img.avatar").should("have.attr", "title", creator.display_name);
+        cy.get("img.avatar").trigger("mouseenter");
+        cy.get("[data-testid='styled-tooltip']").should("be.visible");
+        cy.get("[data-testid='styled-tooltip']").should("contain", creator.display_name);
       });
 
       it("applies the correct styles to the avatar image", () => {

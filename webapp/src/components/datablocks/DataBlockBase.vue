@@ -12,9 +12,9 @@
       <span class="blocktype-label ml-auto mr-3 d-inline" style="white-space: nowrap">
         {{ blockType }}
       </span>
-      <span v-if="blockInfo" class="block-header-icon"
-        ><StyledBlockInfo :block-info="blockInfo"
-      /></span>
+      <span v-if="blockInfo" class="block-header-icon">
+        <BlockTooltip :block-info="blockInfo" :show-icon="true" />
+      </span>
       <font-awesome-icon
         :icon="['fa', 'sync']"
         class="block-header-icon"
@@ -144,7 +144,7 @@ import { DialogService } from "@/services/DialogService";
 
 import { createComputedSetterForBlockField } from "@/field_utils.js";
 import TinyMceInline from "@/components/TinyMceInline";
-import StyledBlockInfo from "@/components/StyledBlockInfo";
+import BlockTooltip from "@/components/BlockTooltip";
 import tinymce from "tinymce/tinymce";
 
 import { deleteBlock, updateBlockFromServer } from "@/server_fetch_utils";
@@ -152,7 +152,7 @@ import { deleteBlock, updateBlockFromServer } from "@/server_fetch_utils";
 export default {
   components: {
     TinyMceInline,
-    StyledBlockInfo,
+    BlockTooltip,
   },
   props: {
     item_id: {
