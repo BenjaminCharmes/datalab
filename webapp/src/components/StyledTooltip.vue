@@ -61,16 +61,16 @@ export default {
 
     anchor.addEventListener("mouseenter", this.delayedShowTooltip);
     anchor.addEventListener("mouseleave", this.hideTooltip);
-    anchor.addEventListener("focus", this.delayedShowTooltip);
-    anchor.addEventListener("blur", this.hideTooltip);
+    anchor.addEventListener("focusin", this.delayedShowTooltip);
+    anchor.addEventListener("focusout", this.hideTooltip);
   },
   beforeUnmount() {
     const anchor = this.$refs.anchor;
     if (anchor) {
       anchor.removeEventListener("mouseenter", this.delayedShowTooltip);
       anchor.removeEventListener("mouseleave", this.hideTooltip);
-      anchor.removeEventListener("focus", this.delayedShowTooltip);
-      anchor.removeEventListener("blur", this.hideTooltip);
+      anchor.removeEventListener("focusin", this.delayedShowTooltip);
+      anchor.removeEventListener("focusout", this.hideTooltip);
     }
     if (this.popperInstance) {
       this.popperInstance.destroy();
@@ -79,13 +79,17 @@ export default {
   methods: {
     delayedShowTooltip() {
       this.tooltipTimeout = setTimeout(() => {
-        this.$refs.tooltipContent.setAttribute("data-show", "");
-        this.popperInstance.update();
+        if (this.$refs.tooltipContent && this.popperInstance) {
+          this.$refs.tooltipContent.setAttribute("data-show", "");
+          this.popperInstance.update();
+        }
       }, this.delay);
     },
     hideTooltip() {
       clearTimeout(this.tooltipTimeout);
-      this.$refs.tooltipContent.removeAttribute("data-show");
+      if (this.$refs.tooltipContent) {
+        this.$refs.tooltipContent.removeAttribute("data-show");
+      }
     },
   },
 };
