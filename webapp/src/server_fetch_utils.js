@@ -12,6 +12,43 @@ import {
 
 import { DialogService } from "@/services/DialogService";
 
+/**
+ * Waits for user info to finish loading and checks if user is authenticated.
+ *
+ *   if (!(await waitForUserAuth())) return;
+ *
+ * @returns {Promise<boolean>} Returns true if user is logged in, false otherwise
+ */
+async function waitForUserAuth() {
+  if (store.state.currentUserInfoLoading) {
+    await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        unwatch();
+        reject(new Error("Timeout waiting for user info"));
+      }, 10000); // 10 second timeout
+
+      const unwatch = store.watch(
+        (state) => state.currentUserInfoLoading,
+        (newValue) => {
+          if (!newValue) {
+            clearTimeout(timeout);
+            unwatch();
+            resolve();
+          }
+        },
+        { immediate: true },
+      );
+    }).catch(() => {
+      DialogService.error({
+        title: `Authentication Error`,
+        message: "Encountered unexpected error when retrieving user credentials from API",
+      });
+    });
+  }
+
+  return store.getters.getCurrentUserID != null;
+}
+
 // ****************************************************************************
 // A simple wrapper to simplify response handling for fetch calls
 // ****************************************************************************
@@ -308,15 +345,18 @@ export function searchCollections(query, nresults = 100) {
 }
 
 export async function getUserInfo() {
+  store.commit("setCurrentUserInfoLoading", true);
   return fetch_get(`${API_URL}/get-current-user/`)
     .then((response_json) => {
       store.commit("setDisplayName", response_json.display_name);
       store.commit("setCurrentUserID", response_json.immutable_id);
       store.commit("setIsUnverified", response_json.account_status == "unverified" ? true : false);
+      store.commit("setCurrentUserInfoLoading", false);
       return response_json;
     })
     .catch(() => {
       // If the user is not logged in, we return null.
+      store.commit("setCurrentUserInfoLoading", false);
       return null;
     });
 }
@@ -454,8 +494,13 @@ export function removeItemsFromCollection(collection_id, refcodes) {
     });
 }
 
-export async function getItemData(item_id) {
-  return fetch_get(`${API_URL}/get-item-data/${item_id}`)
+export async function getItemData(item_id, accessToken = null) {
+  let url = `${API_URL}/get-item-data/${item_id}`;
+  if (accessToken) {
+    url += `?at=${accessToken}`;
+  }
+
+  return fetch_get(url)
     .then((response_json) => {
       store.commit("createItemData", {
         item_id: item_id,
@@ -463,19 +508,24 @@ export async function getItemData(item_id) {
         child_items: response_json.child_items,
         parent_items: response_json.parent_items,
       });
-
       return "success";
     })
     .catch((error) => {
       DialogService.error({
         title: "Unable to retrieve item",
-        message: "Error getting sample data: " + error,
+        message: "Error getting item data: " + error,
       });
+      throw error;
     });
 }
 
-export async function getItemByRefcode(refcode) {
-  return fetch_get(`${API_URL}/items/${refcode}`)
+export async function getItemByRefcode(refcode, accessToken = null) {
+  let url = `${API_URL}/items/${refcode}`;
+  if (accessToken) {
+    url += `?at=${accessToken}`;
+  }
+
+  return fetch_get(url)
     .then((response_json) => {
       store.commit("createItemData", {
         refcode: refcode,
@@ -491,6 +541,7 @@ export async function getItemByRefcode(refcode) {
         title: "Unable to retrieve item",
         message: "Error getting item data: " + error,
       });
+      throw error;
     });
 }
 
@@ -519,6 +570,9 @@ export async function updateBlockFromServer(item_id, block_id, block_data, event
   //
   // - Will strip known "large data" keys, even if not formalised, e.g., bokeh_plot_data.
   //
+  // Short-circuit and do not send request if user is not logged in
+  if (!(await waitForUserAuth())) return;
+
   delete block_data.bokeh_plot_data;
   delete block_data.b64_encoded_image;
   delete block_data.computed;
@@ -733,6 +787,8 @@ export function deleteFileFromSample(item_id, file_id) {
 }
 
 export async function fetchRemoteTree(invalidate_cache) {
+  if (!(await waitForUserAuth())) return;
+
   var invalidate_cache_param = invalidate_cache ? "1" : "0";
   var url = new URL(
     `${API_URL}/list-remote-directories?invalidate_cache=${invalidate_cache_param}`,
@@ -777,6 +833,9 @@ export async function addRemoteFileToSample(file_entry, item_id) {
 }
 
 export async function getItemGraph({ item_id = null, collection_id = null } = {}) {
+  // Short-circuit and do not send request if user is not logged in
+  if (!(await waitForUserAuth())) return;
+
   let url = `${API_URL}/item-graph`;
   if (item_id != null) {
     url = url + "/" + item_id;
@@ -784,6 +843,10 @@ export async function getItemGraph({ item_id = null, collection_id = null } = {}
   if (collection_id != null) {
     url = url + "?collection_id=" + collection_id;
   }
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const accessToken = urlParams.get("at");
+
   store.commit("setItemGraphIsLoading", true);
   return fetch_get(url)
     .then(function (response_json) {
@@ -792,10 +855,12 @@ export async function getItemGraph({ item_id = null, collection_id = null } = {}
     })
     .catch((error) => {
       store.commit("setItemGraphIsLoading", false);
-      DialogService.error({
-        title: "Graph Retrieval Failed",
-        message: `Error retrieving item graph from API: ${error}`,
-      });
+      if (!accessToken) {
+        DialogService.error({
+          title: "Graph Retrieval Failed",
+          message: `Error retrieving item graph from API: ${error}`,
+        });
+      }
     });
 }
 
