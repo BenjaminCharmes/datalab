@@ -143,8 +143,7 @@ describe("Equipment edit page", () => {
     cy.findByLabelText("Date").type("2000-01-01T00:00");
     cy.findByLabelText("Location").type("room 101");
 
-    cy.findByText("Add a block").click();
-    cy.findByText("Comment").click();
+    cy.findByLabelText("Add a block").contains("Comment").click();
 
     cy.get(".datablock-content div").first().type("a comment is added here.");
 
