@@ -165,7 +165,8 @@ describe("Batch sample creation", () => {
     cy.findByText("baseA").click();
     cy.expandIfCollapsed("[data-testid=synthesis-block]");
     cy.findByLabelText("Description").type("this is a description of baseA.");
-    cy.findByLabelText("Add a block").contains("Comment").click();
+    cy.findByText("Add a block").click();
+    cy.findByText("Comment").click();
 
     cy.get(".datablock-content div").first().type("a comment is added here.");
 
