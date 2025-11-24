@@ -1,5 +1,10 @@
 <template>
-  <StyledTooltip :delay="500" anchor-display="inline-block" anchor-class="notification-anchor">
+  <StyledTooltip
+    v-if="isUnverified || hasUnverifiedUser"
+    :delay="500"
+    anchor-display="inline-block"
+    anchor-class="notification-anchor"
+  >
     <template #anchor>
       <span
         class="notification-dot"

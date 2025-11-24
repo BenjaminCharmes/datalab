@@ -16,7 +16,7 @@ describe("BlockTooltip", () => {
         propsData: { blockInfo: blockInfoWithAttributes, showIcon: true },
       });
 
-      cy.get("svg.info-icon").trigger("mouseenter", { force: true });
+      cy.get(".info-icon").trigger("mouseenter", { force: true });
 
       cy.get("[data-testid='styled-tooltip']")
         .should("be.visible")
@@ -35,8 +35,8 @@ describe("BlockTooltip", () => {
         propsData: { blockInfo: blockInfoWithAttributes, showIcon: true },
       });
 
-      cy.get("svg.info-icon").trigger("mouseenter", { force: true });
-      cy.get("svg.info-icon").trigger("mouseleave", { force: true });
+      cy.get(".info-icon").trigger("mouseenter", { force: true });
+      cy.get(".info-icon").trigger("mouseleave", { force: true });
 
       cy.get("[data-testid='styled-tooltip']").should("not.have.attr", "data-show");
     });
@@ -46,10 +46,10 @@ describe("BlockTooltip", () => {
         propsData: { blockInfo: blockInfoWithAttributes, showIcon: true },
       });
 
-      cy.get("svg.info-icon").focus();
+      cy.get(".info-icon").focus();
       cy.get("[data-testid='styled-tooltip']").should("be.visible");
 
-      cy.get("svg.info-icon").blur();
+      cy.get(".info-icon").blur();
       cy.get("[data-testid='styled-tooltip']").should("not.have.attr", "data-show");
     });
 
@@ -66,7 +66,7 @@ describe("BlockTooltip", () => {
         propsData: { blockInfo: blockInfoNoVersion, showIcon: true },
       });
 
-      cy.get("svg.info-icon").trigger("mouseenter", { force: true });
+      cy.get(".info-icon").trigger("mouseenter", { force: true });
 
       cy.get("[data-testid='styled-tooltip']")
         .should("be.visible")
@@ -149,7 +149,7 @@ describe("BlockTooltip", () => {
         propsData: { blockInfo: blockInfoWithAttributes, showIcon: true },
       });
 
-      cy.get("svg.info-icon").trigger("mouseenter", { force: true });
+      cy.get(".info-icon").trigger("mouseenter", { force: true });
       cy.get("[data-testid='styled-tooltip']").should("contain.text", "Attributes Format");
     });
 
@@ -183,7 +183,7 @@ describe("BlockTooltip", () => {
         propsData: { blockInfo, showIcon: true },
       });
 
-      cy.get("svg.info-icon").trigger("mouseenter", { force: true });
+      cy.get(".info-icon").trigger("mouseenter", { force: true });
 
       cy.get("[data-testid='styled-tooltip']")
         .should("be.visible")
@@ -226,7 +226,7 @@ describe("BlockTooltip", () => {
         propsData: { blockInfo, showIcon: true },
       });
 
-      cy.get("svg.info-icon").trigger("mouseenter", { force: true });
+      cy.get(".info-icon").trigger("mouseenter", { force: true });
 
       cy.get("[data-testid='styled-tooltip']")
         .should("be.visible")

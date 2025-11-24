@@ -164,7 +164,7 @@ describe("UserBubbleLogin", () => {
         if (tooltipText) {
           cy.get(".notification-dot").trigger("mouseenter");
           cy.get("[data-testid='styled-tooltip']").should("have.attr", "data-show");
-          cy.get("#tooltip p").contains(tooltipText);
+          cy.get("[data-testid='styled-tooltip'] p").contains(tooltipText);
         } else {
           cy.get(".notification-dot").should("not.exist");
           cy.get("[data-testid='styled-tooltip']").should("not.have.attr", "data-show");
