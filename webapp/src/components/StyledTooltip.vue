@@ -64,7 +64,7 @@ export default {
     anchor.addEventListener("focusin", this.delayedShowTooltip);
     anchor.addEventListener("focusout", this.hideTooltip);
 
-    document.addEventListener("click", this.handleClickOutside);
+    document.addEventListener("mousedown", this.handleClickOutside);
   },
   beforeUnmount() {
     const anchor = this.$refs.anchor;
@@ -78,7 +78,7 @@ export default {
       this.popperInstance.destroy();
     }
 
-    document.removeEventListener("click", this.handleClickOutside);
+    document.removeEventListener("mousedown", this.handleClickOutside);
   },
   methods: {
     delayedShowTooltip() {
