@@ -63,6 +63,8 @@ export default {
     anchor.addEventListener("mouseleave", this.hideTooltip);
     anchor.addEventListener("focusin", this.delayedShowTooltip);
     anchor.addEventListener("focusout", this.hideTooltip);
+
+    document.addEventListener("click", this.handleClickOutside);
   },
   beforeUnmount() {
     const anchor = this.$refs.anchor;
@@ -75,6 +77,8 @@ export default {
     if (this.popperInstance) {
       this.popperInstance.destroy();
     }
+
+    document.removeEventListener("click", this.handleClickOutside);
   },
   methods: {
     delayedShowTooltip() {
@@ -89,6 +93,16 @@ export default {
       clearTimeout(this.tooltipTimeout);
       if (this.$refs.tooltipContent) {
         this.$refs.tooltipContent.removeAttribute("data-show");
+      }
+    },
+    handleClickOutside(event) {
+      const anchor = this.$refs.anchor;
+      const tooltip = this.$refs.tooltipContent;
+
+      if (!anchor || !tooltip) return;
+
+      if (!anchor.contains(event.target) && !tooltip.contains(event.target)) {
+        this.hideTooltip();
       }
     },
   },
